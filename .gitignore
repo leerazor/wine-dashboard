@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.env.*
+.work/
+input/
+*.xlsx
+*.xlsm
+*.csv
+*.sqlite3
+*.pdf

@@ -1,0 +1,66 @@
+# 이마트 와인장터 가격 비교
+
+이마트 와인장터 행사가를 Wine-Searcher의 **전 세계 세전 750mL 평균가**와 비교합니다. 대시보드에서 원본 위치, 가격 출처, 조회일, 미확인 사유를 볼 수 있습니다.
+
+## 1. 원본 목록 확인
+
+Python 3.10 이상이 필요합니다. 원본은 `input/` 폴더에 두세요.
+
+```powershell
+python -m pip install -r requirements.txt
+python build_dashboard.py inspect 'input/2026 하반기 이마트 와인장터 리스트.pdf'
+python build_dashboard.py inspect input/market.xlsx
+```
+
+2026년 하반기 이마트 와인장터 PDF는 각 쪽의 왼쪽·오른쪽 표를 분리해 상품 행을 가져옵니다. 일반 장터가, 카드 적용가, 교차구매 조건을 각각 표시합니다. PDF 가격표만 대시보드에 넣으려면 다음 명령을 실행하세요.
+
+```powershell
+python build_dashboard.py build 'input/2026 하반기 이마트 와인장터 리스트.pdf' --export-queries .work/queries.csv
+```
+
+시트에서 와인명과 이마트 행사가 열을 찾습니다. `빈티지`, `용량`, `Wine-Searcher 검색명` 열을 함께 두면 매칭에 사용합니다. 검색명은 Wine-Searcher에 표시되는 생산자와 큐베의 영문 전체 이름을 권장합니다. LWIN 코드를 쓰는 API 조회에서는 `LWIN`을 앞에 붙입니다.
+
+헤더가 다르면 `--header-row 3 --wine-column '상품명' --price-column '이마트 행사 가격'`처럼 지정합니다. 여러 후보 시트가 나오면 원본 목록 시트 이름을 `--sheet '레드' --sheet '화이트'`처럼 지정합니다. 원본 시트의 데이터 행을 각각 남기므로 같은 와인이 여러 번 등장해도 행별 가격을 비교할 수 있습니다. 가격이 엑셀 수식이면 Excel에서 계산한 뒤 저장한 파일을 사용하세요.
+
+PDF에 영문 조회명이 없거나 빈티지·용량이 불확실하면 `.work/queries.csv`의 `Product Name`, `Vintage`, `Bottle mL` 열을 확인한 값으로 채웁니다. 다시 실행할 때 `--lookup-map .work/queries.csv`를 지정하면 원본 행 참조 코드로 연결합니다. 복수 빈티지가 표기된 행에는 실제 판매 빈티지를 확인한 뒤 입력하세요.
+
+## 2. Wine-Searcher 가격 가져오기
+
+### Wine Check API
+
+[Wine-Searcher API](https://www.wine-searcher.com/trade/api)에서 발급받은 Wine Check 주소와 키가 필요합니다. 발급 조건에서 전 세계 750mL 세전 평균가가 제공되는지 확인하고, 한 건을 조회해 Wine-Searcher의 Analytics 값과 대조한 후 목록을 처리하세요. 공식 API 계정이 없는 상태에서는 연결과 응답 검증에 모의 응답을 사용했습니다.
+
+Windows PowerShell에서 키는 현재 세션의 환경 변수로 전달합니다. PowerShell 7 이상에서는 입력 마스킹을 지원합니다.
+
+```powershell
+$env:WINE_SEARCHER_API_URL = Read-Host 'Wine Check API URL'
+$env:WINE_SEARCHER_API_KEY = Read-Host 'Wine Check API key' -MaskInput
+python wine_searcher.py 'Chateau Margaux' 2000 --confirm-global-basis
+python build_dashboard.py build input/market.xlsx --api --confirm-global-basis
+```
+
+조회에 지역 제한을 넣지 않고 KRW를 요청합니다. 평균가, 통화, 와인명 또는 LWIN, 빈티지를 확인합니다. 결과가 애매하거나 평균가가 없으면 확인 필요로 표시합니다. 요청은 1초 이상 간격으로 보냅니다. `--max-requests 100`처럼 계정의 호출 한도를 지정할 수 있습니다. API 응답은 `.work/`에 기본 168시간 보관하며, 다시 실행하면 캐시가 없는 조회부터 진행합니다. `--cache-hours 0`은 이전 실행의 캐시를 무시합니다.
+
+### Market Pricing Report
+
+[Wine-Searcher 보고서의 `Global Avg Price`](https://www.wine-searcher.com/images/for-trade/220615_WineSearcher_MarketPricingReport_Sample.pdf)를 CSV 또는 엑셀로 가져올 수 있습니다. 보고서의 `Product Name`과 `Vintage`가 원본의 검색명과 빈티지에 일치해야 합니다. `--export-queries .work/queries.csv`를 지정하면 보고서 요청에 사용할 이름, 빈티지, 원본 행 참조 코드가 생성됩니다.
+
+```powershell
+python build_dashboard.py build input/market.xlsx --report input/wine-searcher.csv --report-currency KRW --report-as-of YYYY-MM-DD
+```
+
+외화 보고서라면 보고서 통화와 가격 기준일을 지정하고 `--fx-rate`에 해당 통화 1단위당 원화 환율, `--fx-source`에 환율 출처와 기준일을 입력합니다. 대시보드에 원본 외화와 원화 환산가가 함께 표시됩니다.
+
+### 비교 기준
+
+- 할인율은 `(세계 평균가 − 일반 장터가) ÷ 세계 평균가 × 100`으로 계산합니다. 양수인 행을 구매 후보로 표시합니다. 카드 적용가와 다병 구매 조건은 함께 표시합니다.
+- 빈티지가 모호하거나 행사가 또는 750mL 단품 여부가 확인되지 않으면 확인 필요에 남깁니다. 용량이 비어 있는 단품의 용량이 750mL임을 확인한 경우 `--assume-750ml`로 지정할 수 있습니다.
+- 가격 소스 옵션을 생략하면 원본 행을 먼저 올리고 가격 수집 대기 상태를 확인할 수 있습니다.
+
+## 3. 웹으로 보기와 GitHub Pages 게시
+
+`build`가 만든 `docs/index.html`은 브라우저에서 바로 열 수 있습니다. 기본 파일의 **예시 보기**는 가상 와인과 가격으로 검색, 정렬, 구매 후보, 미확인 행을 보여줍니다.
+
+GitHub에 소스를 올리고 [저장소의 Pages 설정](https://github.com/leerazor/wine-dashboard/settings/pages)에서 **Deploy from a branch → main → /docs → Save**를 선택합니다. GitHub Pages가 표시하는 게시 주소에서 확인합니다. 기본 주소는 [leerazor.github.io/wine-dashboard](https://leerazor.github.io/wine-dashboard/)입니다.
+
+원본 PDF와 엑셀, 보고서, API 키와 수집 캐시는 로컬에 둡니다. `docs/index.html`에는 대시보드에 표시되는 데이터가 포함되므로, 가격 데이터의 게시 범위를 Wine-Searcher와 계약한 이용 조건에 맞춰 관리합니다.
