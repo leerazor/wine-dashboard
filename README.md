@@ -1,6 +1,26 @@
 # 이마트 와인장터 가격 비교
 
-이마트 와인장터 행사가를 Wine-Searcher의 **세전 750mL 평균가**와 비교합니다. 전 세계 기준을 확인한 가격과 네이버 검색에서 수집한 참고 가격을 구분합니다.
+이마트 와인장터 A·B등급 매장 행사가를 Wine-Searcher의 **세전 750mL 검색 평균가**와 비교합니다. Google AI 개요 추정가, Google 검색 요약, 이전 네이버 검색가를 출처별로 구분합니다.
+
+## A·B등급 통합과 Google 검색
+
+A와 B 원본 PDF를 각각 지정하세요. 상품·빈티지·용량·행사가·행사 조건이 일치하는 행은 합치고, 원본 PDF의 등급과 행 위치를 각각 남깁니다. 기존 대시보드의 가격과 분류는 `--base`에서 읽습니다. `--fx`로 환율을 지정할 수 있으며, 생략하면 기준 대시보드에 표시된 환율을 사용합니다.
+
+```powershell
+python -m pip install -r requirements.txt playwright
+python -m playwright install chromium
+$a = 'input/A 26-1030_와인장터 리플렛A5_48p.pdf'
+$b = 'input/2026 하반기 이마트 와인장터 리스트.pdf'
+python market_catalog.py --grade-a $a --grade-b $b --output .work/catalog.html --query-plan .work/google-queries.json
+python google_prices.py .work/google-queries.json --limit 20
+python market_catalog.py --grade-a $a --grade-b $b --observations .work/google-observations.jsonl
+```
+
+검색어는 빈티지와 생산자·큐베의 영문명에 `wine-searcher worldwide avg price ex-tax 750ml`을 붙입니다. 표기된 빈티지가 여러 개면 빈티지별로 조회하고, 빈티지가 미표기된 와인의 검색가는 참고로 표시합니다. 영문명은 `wine_aliases.tsv`와 `grade_catalog.tsv`를 사용합니다.
+
+수집기는 상품·빈티지가 일치하는 Wine-Searcher 검색 요약과 AI 개요의 가격을 확인합니다. AI 개요에서 단위와 세전 기준, 일치하는 인용 상품을 확인할 수 있으면 AI 추정가를 우선 표시합니다. 같은 상품의 일반 검색 요약 가격이 다르면 함께 표시합니다. Google에서 자동 트래픽 확인 화면이 나오면 수집을 중단합니다. 다음 실행은 저장된 항목을 건너뜁니다.
+
+가격 차이는 검색가의 원화 환산액에서 일반 장터가를 뺍니다. 검색 가격 범위는 양 끝의 차이를 표시합니다. 가격이 있는 모든 판매 행은 차이를 계산하며, 복수·미표기 빈티지 또는 다른 행사 용량·구성은 참고 조건을 표시합니다. CSV에는 등급과 출처, 가격 차이가 포함됩니다.
 
 ## 1. 원본 목록 확인
 
@@ -64,7 +84,7 @@ python build_dashboard.py build input/market.xlsx --report input/wine-searcher.c
 
 외화 보고서라면 보고서 통화와 가격 기준일을 지정하고 `--fx-rate`에 해당 통화 1단위당 원화 환율, `--fx-source`에 환율 출처와 기준일을 입력합니다. 대시보드에 원본 외화와 원화 환산가가 함께 표시됩니다.
 
-### 비교 기준
+### 공식 API·보고서 비교 기준
 
 - 할인율은 `(세계 평균가 − 일반 장터가) ÷ 세계 평균가 × 100`으로 계산합니다. 양수인 행을 구매 후보로 표시합니다. 카드 적용가와 다병 구매 조건은 함께 표시합니다.
 - 빈티지가 모호하거나 행사가 또는 750mL 단품 여부가 확인되지 않으면 확인 필요에 남깁니다. 용량이 비어 있는 단품의 용량이 750mL임을 확인한 경우 `--assume-750ml`로 지정할 수 있습니다.

@@ -12,11 +12,11 @@ from pdfminer.pdfparser import PDFSyntaxError
 
 HEADER = ("상품명", "행사가(원)", "카드사 적용가", "행사 구분", "판매 조건", "원본 위치", "빈티지", "Wine-Searcher 검색명")
 PRICE = re.compile(r"\d{1,3}(?:,\d{3})+")
-RATING = re.compile(r"\s*\((?:R\.?\s*P\.?|W\.?\s*S\.?|W\.?\s*A\.?)\s*\d{2,3}\)\s*$", re.IGNORECASE)
+RATING = re.compile(r"\s*\((?:R\.?\s*P\.?|W\.?\s*S\.?|W\.?\s*A\.?|D\.?)\s*\d{2,3}\)\s*$", re.IGNORECASE)
 YEAR_TOKEN = r"(?:(?:18|19|20)\d{2}|\d{2})"
-VINTAGE_LIST = re.compile(rf"\s({YEAR_TOKEN}(?:\s*[/,]\s*{YEAR_TOKEN})+)\s*$")
+VINTAGE_LIST = re.compile(rf"(?<=[\s가-힣])({YEAR_TOKEN}(?:\s*[/,]\s*{YEAR_TOKEN})+)\s*$")
 VINTAGE_FULL = re.compile(r"(?<!\d)((?:18|19|20)\d{2})\s*$")
-VINTAGE_SHORT = re.compile(r"(?<=[\s가-힣])(\d{2})\s*$")
+VINTAGE_SHORT = re.compile(r"(?:(?<=[\s가-힣])|(?<=DOCG)|(?<=GCC))(\d{2})\s*$", re.IGNORECASE)
 VINTAGE_NV = re.compile(r"\s+(N\.?V\.?|논빈티지|무빈티지)\s*$", re.IGNORECASE)
 LABEL_NUMBER = re.compile(r"(?:\b(?:bin|no\.?|lot)|빈|넘버|로트)\s*$", re.IGNORECASE)
 
