@@ -1,6 +1,6 @@
 # 이마트 와인장터 가격 비교
 
-이마트 와인장터 행사가를 Wine-Searcher의 **전 세계 세전 750mL 평균가**와 비교합니다. 대시보드에서 원본 위치, 가격 출처, 조회일, 미확인 사유를 볼 수 있습니다.
+이마트 와인장터 행사가를 Wine-Searcher의 **세전 750mL 평균가**와 비교합니다. 전 세계 기준을 확인한 가격과 네이버 검색에서 수집한 참고 가격을 구분합니다.
 
 ## 1. 원본 목록 확인
 
@@ -25,6 +25,19 @@ python build_dashboard.py build 'input/2026 하반기 이마트 와인장터 리
 PDF에 영문 조회명이 없거나 빈티지·용량이 불확실하면 `.work/queries.csv`의 `Product Name`, `Vintage`, `Bottle mL` 열을 확인한 값으로 채웁니다. 다시 실행할 때 `--lookup-map .work/queries.csv`를 지정하면 원본 행 참조 코드로 연결합니다. 복수 빈티지가 표기된 행에는 실제 판매 빈티지를 확인한 뒤 입력하세요.
 
 ## 2. Wine-Searcher 가격 가져오기
+
+### 네이버 웹문서 검색 API
+
+[NAVER API HUB 검색 API](https://api.ncloud-docs.com/docs/naver-api-hub-search-webkr)의 Client ID와 Client Secret을 사용합니다. `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET` 환경변수가 비어 있으면 터미널에서 가려진 입력을 받습니다.
+
+```powershell
+python naver_prices.py --aliases wine_aliases.tsv
+python naver_snapshot.py --aliases wine_aliases.tsv --fx .work/naver-fx.json
+```
+
+`naver_prices.py`는 대시보드의 원본 행을 읽고 검색어를 중복 제거해 `.work/naver-search.sqlite3`에 응답을 저장합니다. `--queries`로 줄마다 한 개씩 추가 검색어를 지정할 수 있습니다. `naver_snapshot.py`는 Wine-Searcher 상품 페이지 요약의 `Avg Price (ex-tax)`와 750mL 단위를 읽고, 상품명과 행사 빈티지가 맞는 값을 연결합니다. 빈티지가 미표기된 행은 상품 평균가와 조회된 빈티지를 참고로 표시합니다. `wine_aliases.tsv`는 한글 조회명에 대응하는 영문 검색어 목록입니다.
+
+검색 요약의 `Worldwide` 기준이 확인된 값은 별도로 표시합니다. 행사 단품의 용량이 미표기된 경우에 한해 750mL 가정으로 참고 차이율을 계산합니다. 검색 요약의 가격 기준일이 미표시이므로 수집일을 따로 표시합니다. 외화 환산을 하려면 `--fx` 파일에 `as_of`, `source`, `krw_per_unit`을 입력합니다. 환율은 통화 1단위당 원화입니다. 예를 들어 `{"as_of":"YYYY-MM-DD","source":"ECB 기준환율","krw_per_unit":{"USD":"1346.788171"}}` 형태입니다.
 
 ### Wine Check API
 

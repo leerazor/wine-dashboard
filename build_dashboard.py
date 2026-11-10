@@ -348,8 +348,8 @@ def compare(row: WineRow, result: Lookup, rate: Decimal) -> dict:
     }
 
 
-def update_page(path: Path, payload: dict) -> None:
-    html = PAGE.read_text(encoding="utf-8")
+def update_page(path: Path, payload: dict, template: Path = PAGE) -> None:
+    html = template.read_text(encoding="utf-8")
     encoded = json.dumps(payload, ensure_ascii=False, allow_nan=False, separators=(",", ":")).replace("<", "\\u003c")
     html, count = DATA_BLOCK.subn(lambda match: f"{match[1]}{encoded}{match[2]}", html)
     if count != 1:

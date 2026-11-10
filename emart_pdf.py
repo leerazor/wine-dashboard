@@ -16,7 +16,7 @@ RATING = re.compile(r"\s*\((?:R\.?\s*P\.?|W\.?\s*S\.?|W\.?\s*A\.?)\s*\d{2,3}\)\s
 YEAR_TOKEN = r"(?:(?:18|19|20)\d{2}|\d{2})"
 VINTAGE_LIST = re.compile(rf"\s({YEAR_TOKEN}(?:\s*[/,]\s*{YEAR_TOKEN})+)\s*$")
 VINTAGE_FULL = re.compile(r"(?<!\d)((?:18|19|20)\d{2})\s*$")
-VINTAGE_SHORT = re.compile(r"\s(\d{2})\s*$")
+VINTAGE_SHORT = re.compile(r"(?<=[\s가-힣])(\d{2})\s*$")
 VINTAGE_NV = re.compile(r"\s+(N\.?V\.?|논빈티지|무빈티지)\s*$", re.IGNORECASE)
 LABEL_NUMBER = re.compile(r"(?:\b(?:bin|no\.?|lot)|빈|넘버|로트)\s*$", re.IGNORECASE)
 
