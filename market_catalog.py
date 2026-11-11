@@ -7,6 +7,7 @@ import csv
 import json
 import re
 from collections import Counter, defaultdict
+from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime, timezone
 from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
@@ -15,12 +16,14 @@ from build_dashboard import HEADERS, PAGE, WineRow, compare, tables, update_page
 from naver_prices import read_aliases, read_page
 from naver_snapshot import SPECIAL_SIZE
 from wine_searcher import Lookup, decimal_of, normalize, wine_searcher_link
-from google_prices import canonical_name
+from google_prices import canonical_name, observation as parse_observation, source_market
 
 
 ROOT = PAGE.parent.parent
 CATALOG = re.compile(r'<script type="application/json" id="wine-catalog">(.*?)</script>', re.S)
-SOURCE_RANK = {"google_snippet": 1, "google_ai": 2}
+GOOGLE_SOURCES = {"google_snippet", "google_ai"}
+WORLDWIDE_SCOPES = {"worldwide", "ai_worldwide"}
+NEARBY_VINTAGE_YEARS = 3
 
 
 def offer_key(row: WineRow) -> tuple:
@@ -92,7 +95,7 @@ def combine(a_path: Path, b_path: Path, base: Path) -> tuple[dict, list[dict]]:
 def query_plan(rows: list[dict], *, unpriced_only: bool = False) -> list[dict]:
     queries = {}
     priced = {(normalize(query_name(row)), vintage) for row in rows for vintage in vintages(row)
-              if any(vintage is None or quote.get("vintage") == vintage
+              if any(vintage is None or quote.get("compare_vintage", quote.get("vintage")) == vintage
                      for quote in row.get("search_prices", []))} if unpriced_only else set()
     for row in sorted(rows, key=lambda row: len(row["grades"]) != 1 or row["grades"][0] != "A"):
         for vintage in vintages(row):
@@ -123,67 +126,111 @@ def priced_quote(quote: dict, rates: dict, event: float) -> dict:
     return result
 
 
+def reference_market(quote: dict) -> str:
+    if quote.get("scope") in WORLDWIDE_SCOPES:
+        return ""
+    return source_market(quote.get("url") or "")
+
+
+def reference_match(quote: dict, vintage: str | None) -> tuple[str, int | None] | None:
+    actual = quote.get("vintage")
+    if vintage is None:
+        return "event_unspecified", None
+    if actual == vintage:
+        return "exact", None
+    if quote["source"] != "google_snippet":
+        return None
+    if actual is None:
+        return "unspecified", None
+    if re.fullmatch(r"\d{4}", vintage) and re.fullmatch(r"\d{4}", actual):
+        gap = abs(int(actual) - int(vintage))
+        if gap <= NEARBY_VINTAGE_YEARS:
+            return "nearby", gap
+    return None
+
+
+def select_reference(quotes: list[dict], vintage: str | None) -> dict | None:
+    best = None
+    best_rank = None
+    for quote in quotes:
+        match = reference_match(quote, vintage)
+        if match is None:
+            continue
+        match_type, gap = match
+        actual = quote.get("vintage")
+        market = reference_market(quote)
+        if vintage is None:
+            vintage_rank = int(actual is None)
+            release_year = int(actual) if actual and re.fullmatch(r"\d{4}", actual) else 0
+        else:
+            vintage_rank = {"exact": 2, "nearby": 1, "unspecified": 0}[match_type]
+            release_year = 0
+        rank = (not market, quote["source"] == "google_snippet", vintage_rank,
+                -(gap or 0), release_year, quote.get("scope") in WORLDWIDE_SCOPES, quote["checked_at"])
+        if best_rank is None or rank > best_rank:
+            best = dict(quote, compare_vintage=vintage, match_type=match_type, vintage_gap=gap,
+                        reference_market=market)
+            best_rank = rank
+    return best
+
+
 def apply_prices(data: dict, previous: list[dict], observations: list[dict], fx: dict) -> None:
     rates = {currency: decimal_of(rate) for currency, rate in fx.get("krw_per_unit", {}).items()}
     rates["KRW"] = Decimal(1)
-    existing = defaultdict(list)
-    unspecified = defaultdict(list)
-    refreshed = defaultdict(list)
+    references = defaultdict(list)
     attempted = set()
     searches = {}
+    missing_fx = set()
+
+    def remember_search(name, vintage, url, checked_at):
+        key = name, vintage
+        attempted.add(key)
+        if url and (key not in searches or checked_at >= searches[key]["checked_at"]):
+            searches[key] = {"vintage": vintage, "url": url, "checked_at": checked_at}
+
+    def can_convert(quote):
+        currency = quote["currency"]
+        if rates.get(currency) or (quote.get("krw") and quote.get("price_high") is None):
+            return True
+        missing_fx.add(currency)
+        return False
+
     for row in previous:
-        key = normalize(row.get("lookup") or row["name"])
         english = normalize(query_name(row))
         for search in row.get("google_searches", []):
-            searches[english, search.get("vintage")] = search
+            remember_search(english, search.get("vintage"), search.get("url"), search["checked_at"])
         for vintage in row.get("google_checked_vintages", []):
             attempted.add((english, vintage))
         for quote in row.get("search_prices", []):
-            if quote.get("source") not in SOURCE_RANK:
+            if quote.get("source") not in GOOGLE_SOURCES or not can_convert(quote):
                 continue
-            marked = dict(quote)
             query_vintage = quote.get("query_vintage", row.get("vintage") if not row.get("vintage_options") else quote.get("vintage"))
-            attempted.add((english, query_vintage))
-            if quote.get("google_url"):
-                current = searches.get((english, query_vintage))
-                if current is None or quote["checked_at"] >= current["checked_at"]:
-                    searches[english, query_vintage] = {"vintage": query_vintage, "url": quote["google_url"], "checked_at": quote["checked_at"]}
-            existing[key, quote.get("vintage")].append(marked)
-            if not row.get("vintage") and not row.get("vintage_options"):
-                unspecified[key].append(marked)
+            remember_search(english, query_vintage, quote.get("google_url"), quote["checked_at"])
+            references[english].append(quote)
     for observation in observations:
-        key = normalize(canonical_name(observation["name"])), observation.get("vintage")
-        attempted.add(key)
-        if observation.get("google_url"):
-            current = searches.get(key)
-            if current is None or observation["checked_at"] >= current["checked_at"]:
-                searches[key] = {"vintage": key[1], "url": observation["google_url"], "checked_at": observation["checked_at"]}
-        if observation.get("quote"):
-            if observation["quote"].get("source") not in SOURCE_RANK:
+        english = normalize(canonical_name(observation["name"]))
+        remember_search(english, observation.get("vintage"), observation.get("google_url"), observation["checked_at"])
+        candidates = list(observation.get("organic_quotes") or [])
+        selected_quote = observation.get("quote")
+        if selected_quote and selected_quote not in candidates:
+            candidates.append(selected_quote)
+        for quote in candidates:
+            if quote.get("source") not in GOOGLE_SOURCES:
                 raise ValueError("Google AI 개요 또는 Google 검색 요약의 가격만 사용할 수 있습니다.")
-            refreshed[key].append(observation["quote"])
-
-    def rank(quote):
-        return quote["checked_at"], SOURCE_RANK[quote["source"]], quote["scope"] == "worldwide"
+            if not reference_market(quote) and can_convert(quote):
+                references[english].append(quote)
 
     for row in data["rows"]:
         if row.get("search_name"):
             row["search_name"] = canonical_name(row["search_name"])
         english = normalize(query_name(row))
         options = vintages(row)
-        korean = normalize(row["lookup"])
         for field in ("market_krw", "market_original", "market_currency", "checked_at", "matched_name", "source",
                       "savings_krw", "discount_pct", "reference_savings_krw", "reference_discount_pct"):
             row[field] = None
         row["comparison_note"] = ""
-        selected = []
-        for vintage in options:
-            new = refreshed[english, vintage]
-            old = existing[korean, vintage] if vintage is not None else unspecified[korean] or existing[korean, None]
-            candidates = new + old
-            if not candidates:
-                continue
-            selected.append(max(candidates, key=rank))
+        candidates = references[english]
+        selected = [reference for vintage in options if (reference := select_reference(candidates, vintage))]
         row["search_prices"] = [priced_quote(quote, rates, row["event_krw"]) for quote in selected]
         row["google_checked_vintages"] = [vintage for vintage in options if (english, vintage) in attempted]
         row["google_searches"] = [searches[english, vintage] for vintage in options if (english, vintage) in searches]
@@ -204,6 +251,12 @@ def apply_prices(data: dict, previous: list[dict], observations: list[dict], fx:
             notes.append("행사 용량·구성 차이")
         if any(quote.get("citation_note") for quote in selected):
             notes.append("AI 인용 빈티지 확인 필요")
+        if any(quote["match_type"] == "nearby" for quote in selected):
+            notes.append("다른 빈티지 비교")
+        if any(quote["match_type"] == "unspecified" for quote in selected):
+            notes.append("검색가 빈티지 미지정")
+        if any(quote["reference_market"] for quote in selected):
+            notes.append("지역 조건 가격")
         row["comparison_note"] = " · ".join(notes)
         primary = min(row["search_prices"], key=lambda quote: quote["discount_pct"])
         row["reference_savings_krw"] = primary["savings_krw"]
@@ -214,10 +267,29 @@ def apply_prices(data: dict, previous: list[dict], observations: list[dict], fx:
     expected = {(normalize(entry["name"]), entry["vintage"]) for entry in query_plan(rows)}
     data["generated_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
     data["provider"] = "Google 검색"
+    quotes = [quote for row in rows for quote in row["search_prices"]]
     data["search_info"] = {"fx": fx, "google_queries": len(attempted & expected), "google_checked": sum(row["google_checked"] for row in rows),
                            "expected_queries": len(expected), "pending_queries": len(expected - attempted),
                            "google_prices": sum(any(q["source"].startswith("google_") for q in row["search_prices"]) for row in rows),
-                           "prices": sum(bool(row["search_prices"]) for row in rows)}
+                           "prices": sum(bool(row["search_prices"]) for row in rows),
+                           "quote_sources": dict(Counter(quote["source"] for quote in quotes)),
+                           "match_types": dict(Counter(quote["match_type"] for quote in quotes)),
+                           "nearby_vintage_years": NEARBY_VINTAGE_YEARS}
+    if missing_fx:
+        data["search_info"]["missing_fx"] = sorted(missing_fx)
+
+
+def read_jsonl(paths: list[Path]):
+    for path in paths:
+        with path.open(encoding="utf-8") as source:
+            for line in source:
+                if line.strip():
+                    yield json.loads(line)
+
+
+def parse_capture(item: dict) -> dict:
+    return parse_observation(item["snapshot"], item.get("match_name", item["name"]), item.get("vintage"),
+                             item["url"], item["checked_at"])
 
 
 def main() -> None:
@@ -230,9 +302,12 @@ def main() -> None:
     parser.add_argument("--fx", type=Path, help="원화 환율 JSON. 생략하면 기준 대시보드의 환율을 사용합니다.")
     parser.add_argument("--observations", type=Path, nargs="+", default=[])
     parser.add_argument("--captures", type=Path, nargs="+", default=[], help="브라우저에서 저장한 Google 검색 결과 JSONL")
+    parser.add_argument("--workers", type=int, default=1, help="검색 기록 판독에 사용할 프로세스 수")
     parser.add_argument("--query-plan", type=Path)
     parser.add_argument("--unpriced-only", action="store_true", help="조회 계획에 평균가가 없는 상품·빈티지만 포함")
     args = parser.parse_args()
+    if args.workers < 1:
+        parser.error("--workers는 1 이상이어야 합니다.")
     if args.refresh_page:
         if args.grade_a or args.grade_b:
             parser.error("--refresh-page와 PDF 입력을 함께 지정할 수 없습니다.")
@@ -249,21 +324,14 @@ def main() -> None:
         if not (args.grade_a and args.grade_b):
             parser.error("두 등급의 PDF를 지정하거나 --refresh-page를 사용하세요.")
         data, previous = combine(args.grade_a, args.grade_b, args.base)
-    observations = []
-    for path in args.observations:
-        with path.open(encoding="utf-8") as source:
-            observations.extend(json.loads(line) for line in source if line.strip())
+    observations = list(read_jsonl(args.observations))
     if args.captures:
-        from google_prices import observation
-
-        for path in args.captures:
-            with path.open(encoding="utf-8") as source:
-                for line in source:
-                    if not line.strip():
-                        continue
-                    item = json.loads(line)
-                    observations.append(observation(item["snapshot"], item.get("match_name", item["name"]), item.get("vintage"),
-                                                    item["url"], item["checked_at"]))
+        captures = read_jsonl(args.captures)
+        if args.workers == 1:
+            observations.extend(map(parse_capture, captures))
+        else:
+            with ProcessPoolExecutor(max_workers=args.workers) as pool:
+                observations.extend(pool.map(parse_capture, captures, chunksize=12))
     fx = json.loads(args.fx.read_text(encoding="utf-8")) if args.fx else data.get("search_info", {}).get("fx", {})
     apply_prices(data, previous, observations, fx)
     update_page(args.output, data, PAGE)

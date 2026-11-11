@@ -116,7 +116,9 @@ IDENTITY_ALIASES = {
     normalize("Torres Gran Coronas"): ("Torres Gran Coronas Cabernet Sauvignon Reserva",),
     normalize("Truffle Hunter Leda Barbaresco"): ("Luca Bosio Vineyards Leda Truffle Hunter Barbaresco",),
     normalize("Don Melchor Cabernet Sauvignon"): ("Concha y Toro Don Melchor Cabernet Sauvignon",),
+    normalize("Dominus Estate Dominus"): ("Dominus Estate Christian Moueix",),
     normalize("Two Hands Coach House Block Shiraz"): ("Two Hands Wines Coach House Block Single Vineyard Shiraz",),
+    normalize("Penalolen Azul"): ("Vina Quebrada de Macul Penalolen 'Azul' Red",),
     normalize("Stella Aurea"): ("Vina Quebrada de Macul Stella Aurea",),
     normalize("Unshackled Red Blend"): ("The Prisoner Wine Co. Unshackled Red Blend",),
     normalize("Unshackled Cabernet Sauvignon"): ("The Prisoner Wine Co. Unshackled Cabernet Sauvignon",),
@@ -140,6 +142,13 @@ IDENTITY_ALIASES = {
 # Observed product paths for truncated titles or labels that omit a crucial qualifier.
 # A different product path must not inherit a quote just because its snippet uses the same title.
 EXACT_SOURCE_SLUGS = {
+    normalize("Masseto Massetino"): "massetino+tuscany+igp+italy",
+    normalize("Chateau Valandraud Blanc"): "valandraud+blanc+de+no+one+bordeaux+france",
+    normalize("Robert Groffier Pere & Fils Gevrey-Chambertin Les Seuvrees"): "dom+robert+groffier+pere+les+seuvrees+gevrey+chambertin+cote+de+nuit+burgundy+france",
+    normalize("Bodegas y Vinedos Alion"): "vega+sicilia+alion+ribera+duero+castilla+y+leon+spain",
+    normalize("Domaine de Baronarques Rouge"): "dom+de+baron+arques+limoux+languedoc+roussillon+france",
+    normalize("Penalolen Azul"): "vina+quebrada+de+macul+penalolen+azul+red+chile",
+    normalize("Dominus Estate Dominus"): "dominus+estate+christian+moueix+napa+valley+county+north+coast+california+usa",
     normalize("Camille Saves Le Mont des Tours Blanc de Blancs Extra Brut Grand Cru Champagne"): "camille+saves+cuvee+le+mont+de+tour+blancdeblanc+grand+cru+champagne+france",
     normalize("The Big Red Monster Cabernet Sauvignon Paso Robles"): "big+red+the+monster+cab+sauv+paso+robles+st+luis+obispo+county+central+coast+california+usa",
     normalize("Vincent Girardin Bourgogne Chardonnay Cuvee Saint-Vincent"): "vincent+girardin+chard+cuvee+st+bourgogne+blanc+burgundy+france",
@@ -165,6 +174,40 @@ EXACT_SOURCE_SLUGS = {
     normalize("Cantina Terlano Monticol Pinot Noir Riserva"): "cantina+terlan+kellerei+montcol+pinot+nero+alto+adige+rsrv+trentino+italy",
     normalize("Cantina Terlano Winkl Sauvignon Blanc"): "cantina+terlan+kellerei+winkel+sauv+alto+adige+sud+tyrol+trentino+italy",
     normalize("Chateau Coutet Barsac"): "coutet+barsac+sauternes+bordeaux+france",
+    normalize("Domaine Drouhin Oregon Dundee Hills Pinot Noir"): "dom+drouhin+pinot+noir+dundee+hill+willamette+valley+oregon+usa",
+    normalize("Le Cinciole Aluigi Chianti Classico Gran Selezione"): "le+cinciole+aluigi+grand+select+panzano+docg+chianti+cls+tuscany+italy",
+    normalize("Drouhin Roserock Eola-Amity Hills Chardonnay"): "rose+rock+chard+eola+amity+hill+willamette+valley+oregon+usa",
+    normalize("Frescobaldi Nipozzano Chianti Rufina Riserva"): "marchesi+frescobaldi+castello+di+nipozza+rsrv+docg+chianti+rufina+tuscany+italy",
+    normalize("Domaine Long-Depaquit Chablis Premier Cru Montmains"): "albert+bichot+dom+long+depaquit+montmains+chablis+premier+cru+burgundy+france",
+    normalize("Jigsaw Oregon Pinot Noir"): "ransom+jigsaw+pinot+noir+oregon+usa",
+    normalize("Planeta Didacus Chardonnay"): "planeta+didacus+chardonnay+varietal",
+    normalize("Vietti Moscato d'Asti"): "vietti+cascinetta+docg+muscat+d+asti+piemonte+italy",
+    normalize("Jean-Marie Fourrier Vigne Comte de Chapelle Bourgogne Rouge"): "jean+marie+fourrier+vigne+comte+de+chapelle+pinot+noir+vieilles+bourgogne+rouge+burgundy+france",
+    normalize("Attems Cicinis"): "attems+cicinis+colli+gorizia+friuli+venezia+giulia+italy",
+    normalize("Attems Sauvignon Blanc"): "attems+sauv+friuli+venezia+giulia+igp+italy",
+    normalize("Concha y Toro Terrunyo Cabernet Sauvignon"): "concha+y+toro+terrunyo+block+terrazas+pirque+cab+sauv+maipo+valley+chile",
+    normalize("De Chanceny Cremant de Loire Brut"): "robert+marcel+de+chanceny+cremant+brut+loire+france",
+    normalize("Domaine de la Mordoree Christophe Delorme Condrieu"): "dom+de+la+mordoree+cuvee+christoph+delorme+condrieu+rhone+france",
+    normalize("E. Guigal Saint-Joseph Vignes de l'Hospice Rouge"): "e+guigal+vigne+de+l+hospice+st+joseph+rhone+france",
+    normalize("Le Cinciole Petresco"): "le+cinciole+petresco+colli+della+tuscany+central+igp+italy",
+    normalize("Pierre Gimonnet & Fils Cuvee Gastronome Blanc de Blancs Champagne"): "pierre+gimonnet+blancdeblanc+gastronome+champagne+france",
+    normalize("Vazart-Coquart Grand Bouquet Blanc de Blancs Grand Cru Champagne"): "vazart+coquart+grand+bouquet+blancdeblanc+brut+champagne+france",
+    normalize("Tohu Whenua Matua Pinot Noir"): "tohu+whenua+matua+single+pinot+noir+upper+moutere+nelson+new+zealand",
+    normalize("Cellac Origin Sauvignon Blanc"): "selaks+origin+sauv+blanc+marlborough+new+zealand",
+    normalize("Vina San Pedro 1865 Single Vineyard Selected Vineyards Cabernet Sauvignon"): "vina+st+pedro+1865+single+select+cab+sauv+maipo+valley+chile",
+    normalize("Domaine Vincent Legou Bourgogne Hautes Cotes de Nuits Les Beaux Monts Lussots"): "dom+vincent+legou+les+beau+mont+lussots+bourgogne+haut+cote+de+nuit+burgundy+france",
+    normalize("Ornellaia Le Serre Nuove dell'Ornellaia"): "ornellaia+le+serre+nuove+dell+rosso+bolgheri+tuscany+italy",
+    normalize("Umani Ronchi Casal di Serra Verdicchio"): "umani+ronchi+casal+di+serra+verdicchio+dei+castelli+jesi+cls+superior+marche+italy",
+    normalize("Luce della Vite Lucente"): "tenute+luce+lucente+tuscany+igp+italy",
+    normalize("Mouton Cadet Reserve Sauternes"): "baron+philip+de+rothschild+mouton+cadet+rsrv+sauternes+bordeaux+france",
+    normalize("Vie di Romans Dut'Un"): "vie+di+romans+dut+venezia+giulia+friuli+isonzo+italy",
+    normalize("Chateau de Beaucastel Hommage a Jacques Perrin"): "de+beaucastel+grand+cuvee+hommage+a+jacques+perrin+chateauneuf+du+pape+rhone+france",
+    normalize("Vina San Pedro Molina Gran Reserva Syrah"): "castillo+de+molina+grand+rsrv+sra+maule+valley+chile",
+    normalize("Chateau Leoville Las Cases"): "leoville+cases+grand+de+st+julien+medoc+bordeaux+france",
+    normalize("Domaine Buisson Battault Bourgogne Pinot Noir"): "dom+buisson+battault+bourgogne+rouge+burgundy+france",
+    normalize("Mongeard-Mugneret Bourgogne Pinot Noir"): "dom+mongeard+mugneret+bourgogne+rouge+burgundy+france",
+    normalize("Tolaini Valdisanti"): "tolaini+valdisanti+tenute+s+giovanni+tuscany+igp+italy",
+    normalize("Ossian Vinas Viejas"): "ossian+vinas+vieja+blanco+de+la+tierra+castilla+y+leon+v+t+spain",
 }
 SEARCH_NAME_CORRECTIONS = {key: IDENTITY_ALIASES[key][0] for key in (
     normalize("Francois Martenot Chablis Montflory"), normalize("Domaine Berthenet Bourgogne Chardonnay Pur Sang"),
@@ -378,17 +421,20 @@ def observation(snapshot: str, name: str, vintage: str | None, url: str, checked
                (start is not None and re.search(r'^\s*- heading .*\[level=2\]', line))) and
                (start is None or i > start)), len(lines))
     organic = lines[:start] + lines[end:] if start is not None else lines
-    matches = organic_quotes(organic, name, vintage, checked_at)
-    ai = overview_quote(lines[start + 1:end], matches, name, vintage, checked_at) if start is not None else None
-    ordinary = max((q for q in matches if q["scope"] == "worldwide" or not source_market(q["url"])),
-                   key=lambda q: (q["scope"] == "worldwide", q["vintage"] == vintage, not q["seller_market"]), default=None)
-    if ai and ai["scope"] != "ai_worldwide" and source_market(ai["url"]):
-        ai = None
-    selected = ai or ({**ordinary, "source": "google_snippet"} if ordinary else None)
-    if selected:
-        selected["google_url"] = url
-        selected["query_vintage"] = vintage
-    return {"name": name, "vintage": vintage, "checked_at": checked_at, "google_url": url, "quote": selected}
+    matches = organic_quotes(organic, name, None, checked_at)
+    references = [dict(match, source="google_snippet", google_url=url, query_vintage=vintage)
+                  for match in matches
+                  if match["scope"] == "worldwide" or not source_market(match["url"])]
+    selected = max((reference for reference in references if vintage is None or reference["vintage"] == vintage),
+                   key=lambda reference: (reference["scope"] == "worldwide", reference["vintage"] == vintage,
+                                          not reference["seller_market"]), default=None)
+    if selected is None and start is not None:
+        exact_matches = [match for match in matches if vintage is None or match["vintage"] == vintage]
+        ai = overview_quote(lines[start + 1:end], exact_matches, name, vintage, checked_at)
+        if ai and (ai["scope"] == "ai_worldwide" or not source_market(ai["url"])):
+            selected = dict(ai, google_url=url, query_vintage=vintage)
+    return {"name": name, "vintage": vintage, "checked_at": checked_at, "google_url": url,
+            "quote": selected, "organic_quotes": references}
 
 
 def collect(plan: Path, output: Path, limit: int | None, delay: float, executable: Path | None,

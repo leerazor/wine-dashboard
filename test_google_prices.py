@@ -82,8 +82,11 @@ SNAPSHOT = r'''
 
 
 class GoogleSnippetTests(unittest.TestCase):
+    def read_observation(self, name=NAME, vintage="2021", snapshot=SNAPSHOT):
+        return observation(snapshot, name, vintage, "https://www.google.com/search?q=aphrodite", CHECKED_AT)
+
     def read_quote(self, name=NAME, vintage="2021", snapshot=SNAPSHOT):
-        return observation(snapshot, name, vintage, "https://www.google.com/search?q=aphrodite", CHECKED_AT)["quote"]
+        return self.read_observation(name, vintage, snapshot)["quote"]
 
     def test_split_average_returns_exact_2021_price(self):
         quote = self.read_quote()
@@ -91,8 +94,24 @@ class GoogleSnippetTests(unittest.TestCase):
         self.assertEqual((quote["source"], quote["url"]), ("google_snippet", SOURCE))
         self.assertEqual(quote["scope"], "unspecified")
 
-    def test_another_vintage_is_not_substituted(self):
-        self.assertIsNone(self.read_quote(vintage="2020"))
+    def test_another_vintage_is_exposed_with_its_own_year(self):
+        result = self.read_observation(vintage="2020")
+        self.assertIsNone(result["quote"])
+        self.assertEqual(len(result["organic_quotes"]), 1)
+        reference = result["organic_quotes"][0]
+        self.assertEqual((reference["vintage"], reference["query_vintage"]), ("2021", "2020"))
+        self.assertEqual((reference["source"], reference["google_url"]), ("google_snippet", result["google_url"]))
+
+    def test_organic_average_precedes_valid_ai_estimate(self):
+        overview = f'''
+  - heading "AI Overview" [level=2]
+  - text: 2021 {NAME} global average price (ex-tax) for 750ml is $132.
+  - link "Wine-Searcher":
+    - /url: {SOURCE}
+'''
+        self.assertEqual(self.read_quote(snapshot=overview)["source"], "google_ai")
+        selected = self.read_quote(snapshot=overview + SNAPSHOT)
+        self.assertEqual((selected["source"], selected["price"]), ("google_snippet", "128"))
 
     def test_another_two_hands_cuvee_is_not_substituted(self):
         self.assertIsNone(self.read_quote(name="Two Hands Wines Bella's Garden Shiraz"))
@@ -118,8 +137,34 @@ class GoogleSnippetTests(unittest.TestCase):
     def test_country_filtered_price_requires_explicit_worldwide_average(self):
         local = SNAPSHOT.replace(SOURCE, SOURCE + "/usa")
         self.assertIsNone(self.read_quote(snapshot=local))
+        self.assertEqual(self.read_observation(snapshot=local)["organic_quotes"], [])
         worldwide = local.replace("- emphasis: Avg Price", "- emphasis: Global Avg Price")
         self.assertEqual(self.read_quote(snapshot=worldwide)["scope"], "worldwide")
+
+    def test_azul_alias_keeps_other_vintages_and_excludes_other_cuvees(self):
+        snippet = '''
+- main:
+  - link "Vina Quebrada de Macul Penalolen 'Azul' Red":
+    - /url: https://www.wine-searcher.com/find/vina+quebrada+de+macul+penalolen+azul+red+chile
+    - heading "Vina Quebrada de Macul Penalolen 'Azul' Red" [level=3]
+  - text: Avg Price (ex-tax) $65 / 750ml.
+  - link "2014 Vina Quebrada de Macul Penalolen 'Azul' Red":
+    - /url: https://www.wine-searcher.com/find/vina+quebrada+de+macul+penalolen+azul+red+chile/2014
+    - heading "2014 Vina Quebrada de Macul Penalolen 'Azul' Red" [level=3]
+  - text: Avg Price (ex-tax) $46 / 750ml. 2014 Vintage Saved: 17-Oct-2021.
+  - link "2021 Vina Quebrada de Macul Penalolen Guerrero Cabernet Sauvignon":
+    - /url: https://www.wine-searcher.com/find/vina+quebrada+de+macul+penalolen+guerrero+cab+sauv+maipo+valley+chile/2021
+    - heading "2021 Vina Quebrada de Macul Penalolen Guerrero Cabernet Sauvignon" [level=3]
+  - text: Avg Price (ex-tax) $40 / 750ml.
+  - link "2021 Vina Quebrada de Macul Penalolen Cabernet Sauvignon":
+    - /url: https://www.wine-searcher.com/find/vina+quebrada+de+macul+penalolen+cab+sauv+maipo+valley+chile/2021
+    - heading "2021 Vina Quebrada de Macul Penalolen Cabernet Sauvignon" [level=3]
+  - text: Avg Price (ex-tax) $19 / 750ml.
+'''
+        result = self.read_observation(name="Penalolen Azul", snapshot=snippet)
+        self.assertIsNone(result["quote"])
+        self.assertEqual([(q["vintage"], q["price"]) for q in result["organic_quotes"]],
+                         [(None, "65"), ("2014", "46")])
 
     def test_known_cuvee_path_does_not_accept_another_1865_wine(self):
         snippet = '''
