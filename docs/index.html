@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="이마트 와인장터 행사가와 Wine-Searcher 세전 750mL 평균가를 비교합니다.">
+  <meta name="description" content="이마트 와인장터 카드할인가 또는 행사가를 에이와인과 와인서쳐 가격에 비교합니다.">
   <meta name="color-scheme" content="light">
   <title>이마트 와인장터 가격 비교</title>
   <style>
@@ -17,8 +17,6 @@
       --wine-dark: #401326;
       --line: #e5dcd7;
       --green: #255c43;
-      --green-tint: #e7f1e9;
-      --rose: #f5e6e8;
       --sand: #f2eadd;
       font-family: system-ui, "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
       background: var(--paper);
@@ -29,172 +27,151 @@
     a { color: var(--wine); text-underline-offset: 3px; }
     button, input, select { font: inherit; }
     button { cursor: pointer; }
-    button:disabled { cursor: default; opacity: .6; }
-    :focus-visible { outline: 3px solid #a0415e; outline-offset: 3px; }
-    .wrap { width: min(1192px, calc(100% - 48px)); margin-inline: auto; }
-    .mast { background: var(--white); border-bottom: 1px solid var(--line); }
-    .mast .wrap { display: flex; justify-content: space-between; gap: 12px; align-items: center; min-height: 62px; }
-    .brand { display: inline-flex; gap: 10px; align-items: center; font-size: .86rem; font-weight: 720; letter-spacing: -.01em; }
-    .brand svg { color: var(--wine); }
-    .utility, .action {
-      border-radius: 8px; border: 1px solid var(--line); background: var(--white); color: var(--ink);
-      padding: 8px 13px; min-height: 38px; font-weight: 650; font-size: .83rem;
+    button:disabled { cursor: default; opacity: .55; }
+    :focus-visible { outline: 2px solid #a0415e; outline-offset: 2px; }
+    [hidden] { display: none !important; }
+    .wrap { width: min(1160px, calc(100% - 24px)); margin-inline: auto; }
+    .mast { background: var(--wine-dark); color: #fff9f5; padding: 15px 0 16px; }
+    h1 { font-size: 1.34rem; line-height: 1.25; letter-spacing: -.045em; margin: 0; }
+    .panel {
+      margin-block: 12px 32px; border-radius: 12px; border: 1px solid var(--line);
+      background: var(--white); overflow: hidden;
     }
-    .utility:hover, .action:hover:not(:disabled) { border-color: var(--wine); color: var(--wine); }
-    .hero {
-      background: radial-gradient(ellipse at 85% 34%, #813551, transparent 50%), var(--wine-dark);
-      color: #fff9f5; padding: 51px 0 55px;
+    .toolbar { padding: 12px 12px 5px; }
+    .controls { display: grid; gap: 7px; }
+    .sort-control { display: flex; align-items: center; gap: 8px; }
+    .sort-control span, .catalog-controls label { font-size: .79rem; font-weight: 700; color: var(--muted); }
+    .sort-control span { flex: none; }
+    input, select {
+      min-width: 0; width: 100%; min-height: 42px; padding: 7px 9px;
+      border: 1px solid var(--line); border-radius: 7px; background: var(--white); color: var(--ink);
     }
-    .hero .wrap { position: relative; }
-    .overline { margin: 0; font-size: .76rem; font-weight: 740; letter-spacing: .11em; }
-    .hero .overline { color: #f1c6cc; }
-    h1 { font-size: clamp(2.1rem, 5.5vw, 4.2rem); line-height: 1.11; letter-spacing: -.075em; margin: 12px 0 15px; }
-    .hero p:not(.overline) { margin: 0; line-height: 1.7; color: #f4e2e5; font-size: clamp(.87rem, 2vw, 1.04rem); }
-    .hero-note { display: inline-block; margin-top: 21px; border: 1px solid #c48293; border-radius: 20px; padding: 5px 10px; font-size: .77rem; }
-    .stats { margin: 24px auto 28px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-    .stat { background: var(--white); border: 1px solid var(--line); border-radius: 13px; padding: 16px 18px; }
-    .stat span { display: block; font-size: .8rem; font-weight: 650; color: var(--muted); }
-    .stat strong { display: block; margin-top: 4px; font-size: 1.82rem; letter-spacing: -.05em; font-variant-numeric: tabular-nums; }
-    .stat-good strong { color: var(--green); }
-    .panel { border-radius: 16px; border: 1px solid var(--line); background: var(--white); overflow: hidden; }
-    .panel-head { padding: 23px 25px 14px; }
-    .panel-head .overline { color: var(--wine); }
-    h2 { font-size: 1.55rem; letter-spacing: -.055em; margin: 5px 0 4px; }
-    .panel-head p:last-child { color: var(--muted); margin: 0; font-size: .86rem; line-height: 1.55; }
-    .toolbar { padding: 0 25px 15px; }
-    .segments { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
-    .segment { padding: 6px 12px; border-radius: 20px; border: 1px solid var(--line); background: var(--white); color: var(--muted); font-size: .8rem; min-height: 36px; }
-    .segment[aria-pressed="true"] { border-color: var(--wine); background: var(--wine); color: white; font-weight: 700; }
-    .controls { display: grid; grid-template-columns: minmax(180px, 1fr) max-content max-content; align-items: end; gap: 10px; }
-    .control label { display: block; margin: 0 0 4px; font-size: .78rem; font-weight: 700; color: var(--muted); }
-    .control input, .control select { display: block; border: 1px solid var(--line); background: var(--white); border-radius: 8px; padding: 9px 12px; min-height: 42px; width: 100%; color: var(--ink); font-size: .86rem; }
-    .controls .action { min-height: 42px; }
-    .catalog-controls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
-    .count { font-size: .79rem; color: var(--muted); padding-top: 12px; margin: 0; }
-    table { border-collapse: collapse; width: 100%; font-size: .86rem; table-layout: fixed; }
-    th { background: var(--sand); font-size: .78rem; color: #514748; text-align: left; }
-    th, td { padding: 12px 11px; border-top: 1px solid var(--line); vertical-align: top; }
-    th:first-child, td:first-child { padding-left: 25px; }
-    th:last-child, td:last-child { padding-right: 25px; }
-    .money-col { text-align: right; width: 12%; font-variant-numeric: tabular-nums; }
-    .difference-col { width: 12%; text-align: right; font-variant-numeric: tabular-nums; }
-    .source-col { width: 17%; }
-    .primary { font-weight: 720; overflow-wrap: anywhere; }
-    .sub { display: block; margin-top: 4px; font-size: .76rem; line-height: 1.5; color: var(--muted); overflow-wrap: anywhere; }
-    .catalog-line { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 7px; margin-top: 5px; font-size: .74rem; color: var(--muted); }
-    .catalog-type { border-radius: 6px; background: var(--sand); padding: 2px 6px; font-weight: 700; }
-    .catalog-type.red { color: var(--wine); background: var(--rose); }
-    .catalog-type.white { color: #695115; background: #f4edcf; }
-    .catalog-type.sparkling { color: #295b56; background: #e3f0ed; }
-    .catalog-type.rose { color: #8a3055; background: #f9e7ef; }
-    .grade { color: #43304d; background: #ece4f2; }
-    .quote + .quote { border-top: 1px solid var(--line); margin-top: 9px; padding-top: 6px; }
+    input::placeholder { color: var(--muted); }
+    select { text-overflow: ellipsis; }
+    .result-bar { display: flex; align-items: center; gap: 4px; margin-top: 3px; }
+    .count { flex: 1; margin: 0; color: var(--muted); font-size: .8rem; }
+    .utility, .detail-toggle {
+      min-height: 36px; min-width: 44px; border: 1px solid transparent; border-radius: 6px;
+      padding: 4px 6px; color: var(--muted); background: transparent; font-size: .78rem; font-weight: 680;
+    }
+    .utility:hover:not(:disabled), .detail-toggle:hover,
+    .utility[aria-expanded="true"], .detail-toggle[aria-expanded="true"] { color: var(--wine); background: var(--sand); }
+    .control-panel { margin: 4px 0 9px; padding: 10px; border-radius: 8px; background: var(--paper); }
+    .segments { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+    .segment {
+      min-height: 34px; padding: 5px 9px; border: 1px solid var(--line); border-radius: 16px;
+      background: var(--white); color: var(--muted); font-size: .78rem;
+    }
+    .segment[aria-pressed="true"] { border-color: var(--wine); background: var(--wine); color: white; }
+    .catalog-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .catalog-controls label { display: block; margin-bottom: 4px; }
+    .guide { font-size: .82rem; line-height: 1.55; color: var(--muted); }
+    .guide p { margin: 0 0 6px; }
+    .guide .utility { padding-inline: 0; color: var(--wine); }
+    table { display: block; width: 100%; table-layout: fixed; border-collapse: collapse; }
+    thead { position: absolute; clip-path: inset(50%); overflow: hidden; width: 1px; height: 1px; }
+    tbody { display: block; }
+    .price-row {
+      display: grid; grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 7px 8px; padding: 10px 12px 11px; border-top: 1px solid var(--line);
+    }
+    #prices tbody td { min-width: 0; width: auto; padding: 0; text-align: left; overflow-wrap: anywhere; }
+    .wine-col { grid-column: 1 / -1; }
+    .wine-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
+    .wine-heading > div { min-width: 0; }
+    .primary { font-size: .96rem; font-weight: 730; line-height: 1.36; word-break: keep-all; }
+    .wine-meta { margin-top: 2px; color: var(--muted); font-size: .73rem; }
+    .detail-toggle { flex: none; border-color: var(--line); }
+    .money-col, .difference-col { font-variant-numeric: tabular-nums; }
+    .money-col { grid-column: span 2; font-size: clamp(.78rem, 3.65vw, .94rem); font-weight: 630; white-space: nowrap; }
+    .emart-col { color: var(--wine-dark); font-weight: 760; }
+    #prices tbody .difference-col {
+      grid-column: span 3; border-top: 1px solid var(--line); padding-top: 4px; font-size: .84rem;
+    }
+    #prices tbody td[data-label]::before {
+      display: block; content: attr(data-label); font-size: .72rem; font-weight: 550;
+      color: var(--muted); margin-bottom: 2px;
+    }
+    .delta-rate { display: inline-block; margin-left: 5px; font-size: .76rem; }
     .positive { color: var(--green); }
     .negative { color: var(--wine); }
-    .card-price { color: var(--wine); font-weight: 700; }
-    .lookup-link { display: inline-block; margin-top: 5px; font-size: .77rem; }
-    .awine-price .lookup-link { margin-top: 0; font-size: inherit; font-weight: 720; }
-    .pill { display: inline-block; border-radius: 14px; padding: 4px 8px; font-size: .74rem; font-weight: 700; background: var(--sand); color: #5b4525; }
-    .pill.good { background: var(--green-tint); color: var(--green); }
-    .pill.higher { background: var(--rose); color: var(--wine); }
-    .blank { text-align: center; padding: 40px 21px 46px; border-top: 1px solid var(--line); }
-    .blank strong { font-size: 1.07rem; }
-    .blank p { color: var(--muted); font-size: .85rem; line-height: 1.6; margin: 8px 0 0; }
-    .guide { color: var(--muted); font-size: .83rem; margin: 20px auto 44px; line-height: 1.7; }
-    .guide summary { color: var(--ink); cursor: pointer; font-weight: 700; }
-    .guide p { margin: 6px 0; }
-    [hidden] { display: none !important; }
-    @media (max-width: 760px) {
-      .wrap { width: calc(100% - 28px); }
-      .hero { padding: 38px 0 40px; }
-      .stats { gap: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 14px auto 18px; }
-      .stat { padding: 11px 13px; }
-      .stat strong { font-size: 1.4rem; }
-      .panel-head, .toolbar { padding-inline: 15px; }
-      .controls { grid-template-columns: minmax(0, 1fr) max-content; }
-      .controls .control:first-child { grid-column: 1 / -1; }
-      .catalog-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .control, .control input, .control select { min-width: 0; }
-      .control select { text-overflow: ellipsis; }
-      table, tbody { display: block; }
-      thead { position: absolute; clip-path: inset(50%); overflow: hidden; width: 1px; height: 1px; }
-      #prices tbody tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; padding: 14px 15px; border-top: 1px solid var(--line); }
-      #prices tbody td { min-width: 0; width: auto; padding: 0; border: 0; text-align: left; overflow-wrap: anywhere; }
-      #prices tbody td:first-child, #prices tbody .awine-difference, #prices tbody .source-col { grid-column: 1 / -1; }
-      #prices tbody .money-col, #prices tbody .difference-col { border-top: 1px solid var(--line); padding-top: 7px; }
-      #prices tbody .sub { word-break: keep-all; }
-      #prices tbody td[data-label]::before { display: block; content: attr(data-label); font-size: .71rem; color: var(--muted); margin-bottom: 2px; }
+    .detail-row, .detail-row td { display: block; }
+    .detail-content {
+      display: grid; gap: 10px; padding: 10px 12px 12px; background: var(--paper);
+      font-size: .78rem; line-height: 1.5; word-break: keep-all;
+    }
+    .detail-content section { min-width: 0; }
+    .detail-content h2 { font-size: .85rem; color: var(--wine); margin: 0 0 4px; }
+    .detail-content p { margin: 3px 0; }
+    .detail-content a { display: inline-block; margin: 3px 9px 0 0; }
+    .detail-content .quote + .quote { border-top: 1px solid var(--line); margin-top: 7px; padding-top: 4px; }
+    .blank { text-align: center; padding: 27px 12px; border-top: 1px solid var(--line); }
+    .blank strong { font-size: .98rem; }
+    .blank p { margin: 6px 0 0; color: var(--muted); font-size: .82rem; }
+    @media (min-width: 801px) {
+      .wrap { width: min(1160px, calc(100% - 48px)); }
+      .mast { padding: 19px 0 20px; }
+      h1 { font-size: 1.7rem; }
+      .panel { margin-top: 16px; }
+      .toolbar { padding: 14px 18px 5px; }
+      .controls { grid-template-columns: minmax(0, 1fr) 325px; }
+      .catalog-controls { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      table { display: table; font-size: .89rem; }
+      thead { position: static; clip-path: none; width: auto; height: auto; }
+      tbody { display: table-row-group; }
+      .price-row, .detail-row { display: table-row; }
+      th { padding: 10px 8px; background: var(--sand); color: #514748; font-size: .78rem; text-align: left; }
+      th:first-child, #prices tbody .wine-col { padding-left: 18px; }
+      th:last-child, #prices tbody .difference-col:last-child { padding-right: 18px; }
+      th.money-col { width: 13%; }
+      th.difference-col { width: 14%; }
+      #prices tbody .price-row td { padding: 10px 8px; vertical-align: top; border-top: 1px solid var(--line); }
+      #prices tbody .price-row .wine-col { padding-left: 18px; }
+      #prices tbody .price-row td:last-child { padding-right: 18px; }
+      #prices thead .money-col, #prices thead .difference-col,
+      #prices tbody .money-col, #prices tbody .difference-col { text-align: right; }
+      #prices tbody td[data-label]::before { display: none; }
+      .money-col { font-size: .87rem; }
+      .delta-rate { display: block; margin: 2px 0 0; }
+      .detail-row td { display: table-cell; }
+      .detail-content { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; padding-inline: 18px; }
     }
   </style>
 </head>
 <body>
   <header class="mast">
-    <div class="wrap">
-      <div class="brand">
-        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M7 3h10l1 6a6 6 0 0 1-12 0l1-6Zm5 12v6m-4 0h8M6 8h12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        와인장터 가격 노트
-      </div>
-      <button type="button" id="demo-toggle" class="utility" aria-pressed="false">예시 보기</button>
-    </div>
+    <div class="wrap"><h1>이마트 와인장터</h1></div>
   </header>
-  <section class="hero">
-    <div class="wrap">
-      <p class="overline">2026 하반기 이마트 와인장터</p>
-      <h1>와인 가격 비교</h1>
-      <p>A·B등급 매장 행사가를 에이와인 국내 판매가와 Wine-Searcher 세전 750mL 검색 가격과 비교합니다.</p>
-      <span class="hero-note" id="snapshot-label">원본 목록 입력 대기</span>
-    </div>
-  </section>
-  <main>
-    <section class="wrap stats" aria-label="비교 현황">
-      <div class="stat"><span>통합 판매 행</span><strong id="total">—</strong></div>
-      <div class="stat stat-good"><span>에이와인 판매가 확인</span><strong id="awine-priced">—</strong></div>
-      <div class="stat"><span>에이와인 조회 완료</span><strong id="awine-checked">—</strong></div>
-      <div class="stat stat-good"><span>검색 평균가 수집</span><strong id="priced">—</strong></div>
-      <div class="stat"><span>Google 조회 완료</span><strong id="compared">—</strong></div>
-      <div class="stat"><span>검색 평균가 미확인</span><strong id="pending">—</strong></div>
-    </section>
-    <section class="wrap panel" aria-labelledby="list-heading">
-      <div class="panel-head">
-        <p class="overline">전체 목록</p>
-        <h2 id="list-heading">와인별 가격</h2>
-        <p id="grade-summary">판매 등급과 평균가의 출처를 항목별로 확인할 수 있습니다.</p>
+  <main class="wrap panel" aria-label="와인별 가격">
+    <div class="toolbar">
+      <div class="controls">
+        <input type="search" id="search" aria-label="와인 검색" placeholder="와인명 · 빈티지 · 산지" autocomplete="off">
+        <label class="sort-control">
+          <span>정렬</span>
+          <select id="sort">
+            <option value="awine-saving">에이와인 대비 · 절약액 큰순</option>
+            <option value="awine-rate">에이와인 대비 · 차이율 큰순</option>
+            <option value="market-saving">와인서쳐 대비 · 절약액 큰순</option>
+            <option value="market-rate">와인서쳐 대비 · 차이율 큰순</option>
+          </select>
+        </label>
       </div>
-      <div class="toolbar">
+      <div class="result-bar">
+        <p id="row-count" class="count" role="status" aria-live="polite"></p>
+        <button type="button" class="utility" aria-expanded="false" aria-controls="filters">필터</button>
+        <button type="button" class="utility" aria-expanded="false" aria-controls="guide">비교 기준</button>
+        <button type="button" class="utility" id="export" aria-label="CSV 받기" disabled>CSV</button>
+      </div>
+      <div class="control-panel" id="filters" hidden>
         <div class="segments" role="group" aria-label="비교 결과 필터">
           <button type="button" class="segment" data-view="all" aria-pressed="true">전체</button>
-          <button type="button" class="segment" data-view="awine" aria-pressed="false">에이와인 판매가 있음</button>
-          <button type="button" class="segment" data-view="priced" aria-pressed="false">검색 평균가 있음</button>
-          <button type="button" class="segment" data-view="bargain" aria-pressed="false">검색 평균가 대비 행사가 낮음</button>
-          <button type="button" class="segment" data-view="pending" aria-pressed="false">검색 평균가 미확인</button>
-        </div>
-        <div class="controls">
-          <div class="control">
-            <label for="search">와인 검색</label>
-            <input type="search" id="search" placeholder="와인명, 빈티지, 산지, 행사 구분" autocomplete="off">
-          </div>
-          <div class="control">
-            <label for="sort">정렬</label>
-            <select id="sort">
-              <option value="discount_pct">검색 평균가 차이율 높은순</option>
-              <option value="savings_krw">검색 평균가 차이 큰순</option>
-              <optgroup label="에이와인 대비 이마트 가격 차이">
-                <option value="awine-event-desc">에이와인 대비 일반가 차이 큰순</option>
-                <option value="awine-event-asc">에이와인 대비 일반가 차이 작은순</option>
-                <option value="awine-card-desc">에이와인 대비 카드가 차이 큰순</option>
-                <option value="awine-card-asc">에이와인 대비 카드가 차이 작은순</option>
-              </optgroup>
-              <option value="event_krw">이마트 행사가 낮은순</option>
-              <option value="event_krw_desc">이마트 행사가 높은순</option>
-              <option value="original">원본 순서</option>
-            </select>
-          </div>
-          <button type="button" class="action" id="export" disabled>CSV 받기</button>
+          <button type="button" class="segment" data-view="awine" aria-pressed="false">에이와인 가격 있음</button>
+          <button type="button" class="segment" data-view="priced" aria-pressed="false">와인서쳐 가격 있음</button>
+          <button type="button" class="segment" data-view="bargain" aria-pressed="false">와인서쳐보다 저렴</button>
+          <button type="button" class="segment" data-view="pending" aria-pressed="false">와인서쳐 가격 미확인</button>
         </div>
         <div class="catalog-controls" role="group" aria-label="와인 분류 필터">
-          <div class="control">
+          <div>
             <label for="grade-filter">매장 등급</label>
             <select id="grade-filter">
               <option value="">전체 등급</option>
@@ -205,55 +182,46 @@
               <option value="B-only">B등급만</option>
             </select>
           </div>
-          <div class="control">
+          <div>
             <label for="type-filter">와인 유형</label>
             <select id="type-filter"><option value="">전체 유형</option></select>
           </div>
-          <div class="control">
+          <div>
             <label for="country-filter">생산국</label>
             <select id="country-filter"><option value="">전체 생산국</option></select>
           </div>
-          <div class="control">
+          <div>
             <label for="region-filter">산지</label>
             <select id="region-filter"><option value="">전체 산지</option></select>
           </div>
         </div>
-        <p id="row-count" class="count" role="status" aria-live="polite"></p>
       </div>
-      <table id="prices" hidden aria-labelledby="list-heading">
-        <thead>
-          <tr>
-            <th scope="col">와인 / 빈티지</th>
-            <th scope="col" class="money-col">이마트 행사가</th>
-            <th scope="col" class="money-col">에이와인 판매가</th>
-            <th scope="col" class="difference-col">에이와인 대비 차이 <span class="sub">일반가 · 카드가</span></th>
-            <th scope="col" class="money-col">검색 평균가 <span class="sub">세전 · 750mL</span></th>
-            <th scope="col" class="difference-col">검색 평균가 차이 <span class="sub">평균가 − 일반 행사가</span></th>
-            <th scope="col" class="source-col">결과 / 출처</th>
-          </tr>
-        </thead>
-        <tbody id="rows"></tbody>
-      </table>
-      <div class="blank" id="empty">
-        <strong id="empty-title">와인 목록을 기다리는 중입니다.</strong>
-        <p id="empty-copy">목록과 Wine-Searcher 가격을 가져오면 이곳에 표시됩니다.</p>
+      <div class="control-panel guide" id="guide" hidden>
+        <p>이마트 비교가는 카드할인가를 우선 적용합니다. 카드할인가가 없으면 행사가를 적용합니다.</p>
+        <p>절약액은 비교 출처 가격에서 이마트가를 뺀 금액입니다. 차이율은 절약액을 비교 출처 가격으로 나눈 비율입니다. 양수면 이마트가 더 저렴합니다.</p>
+        <p>에이와인은 공식 판매가 중 우선 매칭된 상품을 사용합니다. 와인서쳐는 Google 검색에 표시된 세전 750mL 원화 환산가 중 최저값을 사용합니다. 가격 범위는 하한을 적용합니다.</p>
+        <p>빈티지·용량·집계 범위와 행사 조건은 각 와인의 상세에서 확인할 수 있습니다.</p>
+        <p id="provider-info"></p>
+        <button type="button" id="demo-toggle" class="utility" aria-pressed="false">예시 보기</button>
       </div>
-    </section>
-    <details class="wrap guide">
-      <summary>비교 기준 및 데이터 출처</summary>
-      <p>와인·빈티지·용량·행사 조건·가격이 같은 판매 행은 A·B 공통으로 합쳤습니다. 등급은 리플렛 기준이며 매장별 입고와 재고가 다를 수 있습니다.</p>
-      <p>에이와인 가격은 공식 상품 상세의 원화 판매가입니다. 차이는 에이와인 판매가에서 이마트 일반 행사가 또는 카드가를 뺀 값입니다. 양수면 이마트가, 음수면 에이와인이 저렴합니다.</p>
-      <p>에이와인 정렬은 첫 번째 표시 가격을 사용합니다. 같은 와인의 동일 빈티지를 우선하고, 3년 이내의 다른 빈티지와 용량 가정은 함께 표시합니다. 재고는 상품 상세의 픽업·장바구니·품절 표시를 읽은 결과입니다.</p>
-      <p>Google 일반 검색 결과에 표시된 Wine-Searcher 세전 750mL 평균가를 우선 사용합니다. 같은 상품의 동일 빈티지가 없으면 3년 이내에서 가장 가까운 빈티지, 이어서 빈티지 미지정 가격을 참고가로 표시합니다. 행사 빈티지가 미표기된 경우에는 검색 결과에서 확인한 빈티지를 표시합니다.</p>
-      <p>일반 검색에서 참고가가 없으면 같은 상품의 Google AI 개요를 추정가로 표시합니다. 지역 조건과 가격 집계일은 검색 결과에서 확인된 경우에 함께 표시합니다.</p>
-      <p>가격 차이는 세전 750mL 검색가에서 일반 행사가를 뺀 값입니다. 양수는 행사가가 더 낮다는 뜻입니다. 빈티지·용량·구성이 다를 수 있는 행에도 단순 차이를 표시하고 참고 조건을 함께 붙였습니다.</p>
-      <p>검색가에 범위가 있으면 양 끝의 차이를 모두 표시합니다. 여러 가격이 있는 판매 행은 가장 낮은 차이율을 기준으로 정렬하고, 해당 가격의 원화 차이를 CSV의 기본 차이 열에 담습니다.</p>
-      <p>카드 적용가와 교차구매 조건은 일반 장터가 아래에 표시합니다.</p>
-      <p>원본에서 용량이 비어 있고 실행 시 750mL로 지정한 항목에는 가정을 표시합니다.</p>
-      <p>유형과 산지는 행사 목록의 상품명·구분과 제품 정보를 바탕으로 분류했습니다. 세부 산지를 확인하기 어려운 항목은 생산국까지만 표시합니다.</p>
-      <p id="provider-info"></p>
-      <p><a href="https://www.wine-searcher.com/average-price" target="_blank" rel="noopener noreferrer">Wine-Searcher 평균가 기준</a></p>
-    </details>
+    </div>
+    <table id="prices" role="table" aria-label="와인 가격 비교" hidden>
+      <thead role="rowgroup">
+        <tr role="row">
+          <th scope="col" role="columnheader">와인</th>
+          <th scope="col" role="columnheader" class="money-col">이마트</th>
+          <th scope="col" role="columnheader" class="money-col">에이와인</th>
+          <th scope="col" role="columnheader" class="money-col">와인서쳐</th>
+          <th scope="col" role="columnheader" class="difference-col">에이와인 대비</th>
+          <th scope="col" role="columnheader" class="difference-col">와인서쳐 대비</th>
+        </tr>
+      </thead>
+      <tbody id="rows" role="rowgroup"></tbody>
+    </table>
+    <div class="blank" id="empty">
+      <strong id="empty-title">와인 목록을 기다리는 중입니다.</strong>
+      <p id="empty-copy">와인 목록이 추가되면 이곳에 표시됩니다.</p>
+    </div>
   </main>
   <noscript><p class="wrap">가격 검색과 정렬을 사용하려면 JavaScript를 켜 주세요.</p></noscript>
 
@@ -986,11 +954,7 @@
         { name: "메종 샘플 브뤼", type: "sparkling", country: "프랑스", region: "샹파뉴", vintage: "NV", volume_ml: 750, event_krw: 62900, market_krw: 59500, status: "compared" },
         { name: "리저브 샘플 블랑", type: "white", country: "뉴질랜드", region: "말보로", vintage: "2022", volume_ml: 750, event_krw: 25000, status: "no_average", detail: "세계 평균가 확인 필요" },
         { name: "샤토 샘플 매그넘", type: "red", country: "프랑스", region: "보르도", vintage: "2018", volume_ml: 1500, event_krw: 89000, market_krw: 66000, status: "size_review", detail: "1,500mL 매그넘 · 용량 기준 확인" },
-      ].map((row, index) => {
-        const difference = row.status === "compared" ? row.market_krw - row.event_krw : null;
-        return { ...row, row: index + 2, sheet: "예시", savings_krw: difference,
-          discount_pct: difference === null ? null : difference / row.market_krw * 100 };
-      }),
+      ].map((row, index) => ({ ...row, row: index + 2, sheet: "예시" })),
     };
     let data = original;
     let view = "all";
@@ -1009,16 +973,15 @@
     const stockLabels = {cart: "장바구니 표시", pickup: "픽업 예정", sold_out: "품절", inquiry: "매장 문의", unknown: "재고 미표기"};
     const awineStatus = (row) => awineStatuses[row.awine?.status] || "조회 대기";
     const offerStock = (offer) => offer.stock_note || stockLabels[offer.stock];
-    const hasPrice = (row) => Number.isFinite(row.market_krw) || searchPrices(row).length > 0;
-    const metric = (row, field) => row[field] ?? row[`reference_${field}`];
+    const isPrice = (value) => Number.isFinite(value) && value > 0;
+    const hasPrice = (row) => isPrice(row.comparison.market.price);
     const sorts = {
-      event_krw: [(row) => row.event_krw, 1], event_krw_desc: [(row) => row.event_krw, -1],
-      "awine-event-desc": [(row) => awineOffers(row)[0]?.event_delta, -1],
-      "awine-event-asc": [(row) => awineOffers(row)[0]?.event_delta, 1],
-      "awine-card-desc": [(row) => awineOffers(row)[0]?.card_delta, -1],
-      "awine-card-asc": [(row) => awineOffers(row)[0]?.card_delta, 1],
+      "awine-saving": (row) => row.comparison.awine.savings,
+      "awine-rate": (row) => row.comparison.awine.rate,
+      "market-saving": (row) => row.comparison.market.savings,
+      "market-rate": (row) => row.comparison.market.rate,
     };
-    const bargain = (row) => !row.comparison_note && metric(row, "discount_pct") > 0 &&
+    const bargain = (row) => !row.comparison_note && row.comparison.market.savings > 0 &&
       searchPrices(row).every((quote) => !quote.match_type || quote.match_type === "exact");
     const formattedDate = (value) => value ? dateFormat.format(new Date(value)) : "";
     const countryValue = (row) => row.country || "미확인";
@@ -1031,10 +994,29 @@
     const scopeLabels = {worldwide: "전 세계 표기", ai_worldwide: "AI 개요 전 세계 표기", unspecified: "범위 미확인"};
     const scopeText = (quote) => scopeLabels[quote.scope] || scopeLabels.unspecified;
     const signedWon = (value) => `${value > 0 ? "+" : value < 0 ? "−" : ""}${won(Math.abs(value))}`;
-    const deltaText = (low, high) => Number.isFinite(high) && high !== low ? `${signedWon(low)} ~ ${signedWon(high)}` : signedWon(low);
     const marketLabel = (quote) => quote.reference_market ? `${quote.reference_market} 지역 조건` :
       quote.seller_market === "South Korea" ? "한국 판매처 안내" :
       quote.seller_market ? `${quote.seller_market} 판매처 안내` : "";
+
+    function priceDifference(price, emart) {
+      const savings = isPrice(price) && isPrice(emart) ? price - emart : null;
+      return { price, savings, rate: savings === null ? null : savings / price * 100 };
+    }
+
+    function compare(row) {
+      const hasCard = isPrice(row.card_krw);
+      const emart = hasCard ? row.card_krw : row.event_krw;
+      const offer = awineOffers(row).find((item) => isPrice(item.price_krw));
+      let quote;
+      for (const item of searchPrices(row)) {
+        if (isPrice(item.krw) && (!quote || item.krw < quote.krw)) quote = item;
+      }
+      return { hasCard, emart, offer, quote,
+        awine: priceDifference(offer?.price_krw, emart),
+        market: priceDifference(quote?.krw ?? row.market_krw, emart) };
+    }
+
+    for (const row of [...original.rows, ...demo.rows]) row.comparison = compare(row);
 
     function comparisonVintageText(quote) {
       const actual = quote.vintage || "빈티지 미지정";
@@ -1067,142 +1049,166 @@
       }
     }
 
-    function sourceLink(value, label) {
+    function appendLink(parent, value, label) {
       const href = safeSource(value);
-      if (!href) return null;
-      const anchor = element("a", label, "lookup-link");
+      if (!href) return;
+      const anchor = element("a", label);
       anchor.href = href;
       anchor.target = "_blank";
       anchor.rel = "noopener noreferrer";
-      return anchor;
+      parent.append(anchor);
     }
 
-    function renderAwine(row) {
-      const offers = awineOffers(row);
-      const prices = element("td", "", "money-col awine-price");
-      const difference = element("td", offers.length ? "" : "—", "difference-col awine-difference");
-      prices.dataset.label = "에이와인 판매가";
-      difference.dataset.label = "에이와인 대비 이마트 차이";
-      if (!offers.length) {
-        prices.append(element("span", "—"), element("span", awineStatus(row), "sub"));
-        const source = sourceLink(row.awine?.url, "에이와인 상품 ↗");
-        if (source) prices.append(source);
-      }
-      for (const offer of offers) {
-        const price = element("div", "", "quote");
-        const label = won(offer.price_krw);
-        price.append(sourceLink(offer.url, label) || element("strong", label));
-        const specifications = [offer.vintage, offer.volume_ml && `${fmt.format(offer.volume_ml)}mL`].filter(Boolean).join(" · ");
-        if (specifications) price.append(element("span", specifications, "sub"));
-        const notes = [offerStock(offer), ...(offer.notes || [])].filter(Boolean).join(" · ");
-        if (notes) price.append(element("span", notes, "sub"));
-        prices.append(price);
-
-        const delta = element("div", "", "quote");
-        const tone = offer.event_delta > 0 ? "positive" : offer.event_delta < 0 ? "negative" : "";
-        delta.append(element("strong", Number.isFinite(offer.event_delta) ? signedWon(offer.event_delta) : "—", tone));
-        if (offers.length > 1 && offer.event_vintage) delta.append(element("span", `행사 ${offer.event_vintage}`, "sub"));
-        if (Number.isFinite(offer.card_delta)) delta.append(element("span", `카드 ${signedWon(offer.card_delta)}`, "sub"));
-        difference.append(delta);
-      }
-      return [prices, difference];
+    function detailGroup(title) {
+      const section = element("section");
+      section.append(element("h2", title));
+      return section;
     }
 
-    function renderRow(row) {
-      const tr = element("tr");
-      const name = element("td");
-      name.append(element("div", row.name || "와인명 확인 필요", "primary"));
-      const catalogLine = element("div", "", "catalog-line");
-      if (row.grades?.length) catalogLine.append(element("span", `${row.grades.join("·")}등급`, "catalog-type grade"));
-      catalogLine.append(element("span", typeLabels.get(row.type), `catalog-type ${row.type}`),
-        element("span", row.country ? `${row.country} · ${row.region || "산지 미확인"}` : "생산국·산지 미확인"));
-      name.append(catalogLine);
-      const assumed = !row.volume_ml && row.assumed_volume;
+    function detailLines(parent, lines) {
+      for (const line of lines.filter(Boolean)) parent.append(element("p", line));
+    }
+
+    function renderDetails(row) {
+      const { offer, quote, hasCard } = row.comparison;
+      const detail = element("div", "", "detail-content");
+      const emart = detailGroup("이마트");
+      const vintage = row.vintage || row.vintage_options?.join(" / ") || "빈티지 미표기";
       const size = row.volume_ml ? `${fmt.format(row.volume_ml)}mL${row.assumed_volume ? " (가정)" : ""}` :
-        assumed ? "750mL (가정)" : "용량 미확인";
-      const vintage = row.vintage || (row.vintage_options?.length ? row.vintage_options.join(" / ") : "빈티지 미확인");
-      name.append(element("span", `${vintage} · ${size}`, "sub"));
+        row.assumed_volume ? "750mL (가정)" : "용량 미확인";
+      const region = [row.country, row.region].filter(Boolean).join(" · ");
       const lookup = row.search_name || row.lookup;
-      if (lookup && lookup !== row.name) name.append(element("span", lookup, "sub"));
-      if (row.section) name.append(element("span", row.section, "sub"));
-      if (row.offer_sources?.length) {
-        for (const entry of row.offer_sources) name.append(element("span", `${entry.grade} · ${entry.location}`, "sub"));
-      } else name.append(element("span", row.origin || `${row.sheet} ${row.row}행`, "sub"));
+      const locations = row.offer_sources?.map((entry) => `${entry.grade} · ${entry.location}`);
+      detailLines(emart, [
+        [vintage, size, region].filter(Boolean).join(" · "),
+        `행사가 ${won(row.event_krw)}`,
+        hasCard && `카드할인가 ${won(row.card_krw)}`,
+        row.terms, row.section, lookup !== row.name && lookup,
+        ...(locations?.length ? locations : [row.origin || `${row.sheet} ${row.row}행`]),
+      ]);
 
-      const event = element("td", won(row.event_krw), "money-col");
-      event.dataset.label = "이마트 행사가";
-      if (Number.isFinite(row.card_krw)) event.append(element("span", `카드 적용 ${won(row.card_krw)}`, "sub card-price"));
-      if (row.terms) event.append(element("span", row.terms, "sub card-price"));
-      const quotes = searchPrices(row);
-      const market = element("td", Number.isFinite(row.market_krw) ? won(row.market_krw) : quotes.length ? "" : "—", "money-col");
-      market.dataset.label = "세전 평균가 (750mL)";
-      if (Number.isFinite(row.market_krw)) market.append(element("span", "전 세계 평균가", "sub"));
-      if (row.market_currency && row.market_currency !== "KRW") {
-        market.append(element("span", `${row.market_original} ${row.market_currency}`, "sub"));
+      const awine = detailGroup("에이와인");
+      if (!offer) {
+        detailLines(awine, [awineStatus(row)]);
+        appendLink(awine, row.awine?.url, "상품 페이지 ↗");
       }
-      for (const quote of quotes) {
+      for (const item of awineOffers(row)) {
         const box = element("div", "", "quote");
-        const label = krwText(quote);
-        box.append(sourceLink(quote.url, label) || element("div", label));
-        box.append(element("span", `${comparisonVintageText(quote)} · ${scopeText(quote)}`, "sub"));
-        if (quote.price_month) box.append(element("span", `가격 기준 ${quote.price_month}`, "sub"));
-        if (quote.citation_note) box.append(element("span", quote.citation_note, "sub"));
-        if (quote.currency !== "KRW" && Number.isFinite(quote.krw)) box.append(element("span", priceText(quote), "sub"));
+        const specs = [item.vintage, item.volume_ml && `${fmt.format(item.volume_ml)}mL`].filter(Boolean).join(" · ");
+        detailLines(box, [
+          `${item === offer ? "비교가 " : ""}${won(item.price_krw)}`,
+          specs, offerStock(item), ...(item.notes || []),
+          item.checked_at && `조회 ${formattedDate(item.checked_at)}`,
+        ]);
+        appendLink(box, item.url, "상품 페이지 ↗");
+        awine.append(box);
+      }
+
+      const market = detailGroup("와인서쳐");
+      const quotes = searchPrices(row);
+      for (const item of quotes) {
+        const box = element("div", "", "quote");
+        const secondary = Number(item.snippet_price);
+        const differentSnippet = item.snippet_price &&
+          (item.snippet_currency !== item.currency || secondary < Number(item.price) || secondary > Number(item.price_high || item.price));
+        detailLines(box, [
+          `${item === quote ? "비교가 " : ""}${krwText(item)}`,
+          `${comparisonVintageText(item)} · ${scopeText(item)}`,
+          item.currency !== "KRW" && isPrice(item.krw) && priceText(item),
+          [sourceLabels[item.source] || "Google 검색", formattedDate(item.checked_at)].filter(Boolean).join(" · "),
+          marketLabel(item), item.price_month && `가격 기준 ${item.price_month}`, item.citation_note,
+          differentSnippet && `일반 검색 결과 ${foreign.format(secondary)} ${item.snippet_currency}`,
+        ]);
+        appendLink(box, item.url, "와인서쳐 ↗");
+        appendLink(box, item.google_url, "Google 검색 ↗");
         market.append(box);
       }
-      const rate = metric(row, "discount_pct");
-      const savings = metric(row, "savings_krw");
-      const discount = element("td", Number.isFinite(savings) || quotes.length ? "" : "—", "difference-col");
-      discount.dataset.label = "검색 평균가 차이";
-      const differences = quotes.length ? quotes : [{savings_krw: savings, discount_pct: rate}];
-      for (const quote of differences) {
-        const low = quote.savings_krw ?? (Number.isFinite(quote.krw) ? quote.krw - row.event_krw : null);
-        if (!Number.isFinite(low)) continue;
-        const high = quote.savings_krw_high;
-        const box = element("div", "", "quote");
-        const tone = low > 0 ? "positive" : (high ?? low) < 0 ? "negative" : "";
-        box.append(element("strong", deltaText(low, high), tone));
-        const pct = quote.discount_pct ?? (quote.krw ? low / quote.krw * 100 : null);
-        const end = quote.discount_pct_high;
-        if (Number.isFinite(pct)) box.append(element("span", `${percentage.format(pct)}%${Number.isFinite(end) && end !== pct ? ` ~ ${percentage.format(end)}%` : ""}`, "sub"));
-        if (differences.length > 1) box.append(element("span", comparisonVintageText(quote), "sub"));
-        discount.append(box);
-      }
-      if (row.comparison_note) discount.append(element("span", `참고 · ${row.comparison_note}`, "sub"));
-
-      const source = element("td", "", "source-col");
-      const badge = row.status === "compared" ? (bargain(row) ? ["구매 후보", "good"] : ["세계 기준 비교", ""]) :
-        quotes.length ? (bargain(row) ? ["행사가 낮음 · 참고", "good"] : ["검색 평균가", ""]) : ["가격 미확인", ""];
-      source.append(element("span", badge[0], `pill ${badge[1]}`));
-      for (const quote of quotes) {
-        const box = element("div", "", "quote");
-        box.append(element("span", `${sourceLabels[quote.source] || "Google 검색"} · ${formattedDate(quote.checked_at)}`, "sub"));
-        if (quotes.length > 1) box.append(element("span", comparisonVintageText(quote), "sub"));
-        if (marketLabel(quote)) box.append(element("span", marketLabel(quote), "sub"));
-        const secondary = Number(quote.snippet_price);
-        if (quote.snippet_price && (quote.snippet_currency !== quote.currency || secondary < Number(quote.price) || secondary > Number(quote.price_high || quote.price))) {
-          box.append(element("span", `일반 검색 결과 ${foreign.format(secondary)} ${quote.snippet_currency}`, "sub"));
-        }
-        const google = sourceLink(quote.google_url, "Google 검색 ↗");
-        if (google) box.append(google);
-        source.append(box);
-      }
-      if (!quotes.length && (row.search_detail || row.detail)) {
-        source.append(element("span", row.search_detail || row.detail, "sub"));
+      if (!quotes.length) {
+        detailLines(market, [
+          isPrice(row.market_krw) ? `비교가 ${won(row.market_krw)}` : "가격 미확인",
+          row.market_currency && row.market_currency !== "KRW" && `${row.market_original} ${row.market_currency}`,
+          row.search_detail || row.detail,
+          row.google_searches?.[0]?.checked_at && `Google 조회 · ${formattedDate(row.google_searches[0].checked_at)}`,
+        ]);
         for (const search of row.google_searches || []) {
-          const google = sourceLink(search.url, `${search.vintage || "빈티지 미표기"} Google 검색 ↗`);
-          if (google) source.append(google);
+          appendLink(market, search.url, `${search.vintage || "빈티지 미표기"} Google 검색 ↗`);
         }
-        const checked = row.google_searches?.[0]?.checked_at;
-        if (checked) source.append(element("span", `Google 조회 · ${formattedDate(checked)}`, "sub"));
+        if (!row.google_searches?.length) appendLink(market, row.search_url || row.url, "와인서쳐 검색 ↗");
       }
-      if (row.source) source.append(element("span", `${row.source} · ${formattedDate(row.checked_at)}`, "sub"));
-      if (row.matched_name && key(row.matched_name) !== key(row.lookup)) {
-        source.append(element("span", `확인 상품 ${row.matched_name}`, "sub"));
+      detailLines(market, [
+        row.comparison_note,
+        row.source && [row.source, formattedDate(row.checked_at)].filter(Boolean).join(" · "),
+        row.matched_name && key(row.matched_name) !== key(row.lookup) && `확인 상품 ${row.matched_name}`,
+      ]);
+      detail.append(emart, awine, market);
+      return detail;
+    }
+
+    function priceCell(price, label) {
+      const cell = element("td", isPrice(price) ? won(price) : "—", "money-col");
+      cell.dataset.label = label;
+      return cell;
+    }
+
+    function differenceCell({ savings, rate }, label) {
+      const cell = element("td", "", "difference-col");
+      cell.dataset.label = label;
+      if (savings === null) {
+        cell.textContent = "—";
+      } else {
+        const tone = savings > 0 ? "positive" : savings < 0 ? "negative" : "";
+        if (tone) cell.classList.add(tone);
+        cell.append(element("strong", signedWon(savings)), " ",
+          element("span", `${percentage.format(rate)}%`, "delta-rate"));
       }
-      const link = sourceLink(row.search_url || row.url, "Wine-Searcher 검색 ↗");
-      if (link && !quotes.length && !row.google_searches?.length) source.append(link);
-      tr.append(name, event, ...renderAwine(row), market, discount, source);
+      return cell;
+    }
+
+    function renderRow(row, index) {
+      const { emart, hasCard, awine, market } = row.comparison;
+      const tr = element("tr", "", "price-row");
+      tr.setAttribute("role", "row");
+      const name = element("td", "", "wine-col");
+      const heading = element("div", "", "wine-heading");
+      const title = element("div");
+      title.append(element("div", row.name || "와인명 확인 필요", "primary"));
+      const metadata = [
+        row.vintage && !row.name?.includes(row.vintage) && row.vintage,
+        row.type !== "unknown" && typeLabels.get(row.type).split(" · ").at(-1),
+        row.grades?.length && `${row.grades.join("·")}등급`,
+      ].filter(Boolean).join(" · ");
+      if (metadata) title.append(element("div", metadata, "wine-meta"));
+
+      const toggle = element("button", "상세", "detail-toggle");
+      toggle.type = "button";
+      toggle.setAttribute("aria-label", `${row.name || "와인"} 상세`);
+      toggle.setAttribute("aria-expanded", "false");
+      let details;
+      toggle.addEventListener("click", () => {
+        if (details) {
+          details.hidden = !details.hidden;
+        } else {
+          details = element("tr", "", "detail-row");
+          details.id = `wine-detail-${index}`;
+          details.setAttribute("role", "row");
+          const cell = element("td");
+          cell.colSpan = tr.cells.length;
+          cell.setAttribute("role", "cell");
+          cell.append(renderDetails(row));
+          details.append(cell);
+          tr.after(details);
+          toggle.setAttribute("aria-controls", details.id);
+        }
+        toggle.setAttribute("aria-expanded", String(!details.hidden));
+      });
+      heading.append(title, toggle);
+      name.append(heading);
+
+      const event = priceCell(emart, hasCard ? "이마트 카드가" : "이마트 행사가");
+      event.classList.add("emart-col");
+      tr.append(name, event, priceCell(awine.price, "에이와인"), priceCell(market.price, "와인서쳐"),
+        differenceCell(awine, "에이와인 대비"), differenceCell(market, "와인서쳐 대비"));
+      for (const cell of tr.cells) cell.setAttribute("role", "cell");
       return tr;
     }
 
@@ -1240,34 +1246,20 @@
     function render() {
       const rows = data.rows;
       const query = key(byId("search").value.trim()).split(/\s+/).filter(Boolean);
-      const sort = byId("sort").value;
+      const sortValue = sorts[byId("sort").value] || sorts["awine-saving"];
       const type = byId("type-filter").value;
       const country = byId("country-filter").value;
       const region = byId("region-filter").value;
       const grade = byId("grade-filter").value;
-      const demoMode = data.mode === "demo";
       const awine = data.awine_info;
-      const snapshot = data.search_info ? "검색 평균가 반영" : data.provider ? "생성" : "생성 · Wine-Searcher 가격 대기";
-      byId("snapshot-label").textContent = demoMode ? "가상 와인 및 예시 가격" :
-        awine?.checked_at ? `${formattedDate(awine.checked_at)} 에이와인 판매가 조회` :
-        data.generated_at ? `${formattedDate(data.generated_at)} ${snapshot}` : "원본 목록 입력 대기";
-      byId("total").textContent = fmt.format(rows.length);
-      byId("awine-priced").textContent = awine ? fmt.format(rows.filter((row) => awineOffers(row).length).length) : "—";
-      byId("awine-checked").textContent = awine ? `${fmt.format(awine.rows - (awine.status_counts.lookup_error || 0))} / ${fmt.format(awine.rows)}` : "—";
-      byId("priced").textContent = fmt.format(rows.filter(hasPrice).length);
-      byId("compared").textContent = fmt.format(rows.filter((row) => row.google_checked).length);
-      byId("pending").textContent = fmt.format(rows.filter((row) => !hasPrice(row)).length);
       const searchFx = data.search_info?.fx;
-      const grades = data.grade_info;
-      byId("grade-summary").textContent = grades ? `A·B 공통 ${fmt.format(grades.offer_counts["A/B"] || 0)}개 · A등급만 ${fmt.format(grades.offer_counts.A || 0)}개 · B등급만 ${fmt.format(grades.offer_counts.B || 0)}개` :
-        "판매 등급과 평균가의 출처를 항목별로 확인할 수 있습니다.";
       byId("provider-info").textContent = [data.provider, data.fx &&
         `환율 1 ${data.fx.currency} = ${data.fx.krw_per_unit}원 (${data.fx.source})`,
         searchFx?.as_of && `검색 외화 환산 · ${searchFx.source} ${searchFx.as_of}`,
         Number.isFinite(data.search_info?.google_queries) && `Google 조회 ${fmt.format(data.search_info.google_queries)} / ${fmt.format(data.search_info.expected_queries || data.search_info.google_queries)}건`,
         awine && `에이와인 공식 상품 상세 ${fmt.format(awine.pages_read)}건 · ${formattedDate(awine.checked_at)}`].filter(Boolean).join(" · ");
       shown = rows.filter((row) => {
-        if (view === "awine" && !awineOffers(row).length) return false;
+        if (view === "awine" && !isPrice(row.comparison.awine.price)) return false;
         if (view === "bargain" && !bargain(row)) return false;
         if (view === "priced" && !hasPrice(row)) return false;
         if (view === "pending" && hasPrice(row)) return false;
@@ -1275,23 +1267,22 @@
         if (grade === "A/B" ? offered.length !== 2 : grade.endsWith("-only") ? offered.length !== 1 || offered[0] !== grade[0] : grade && !offered.includes(grade)) return false;
         if ((type && row.type !== type) || (country && countryValue(row) !== country) ||
             (region && regionValue(row) !== region)) return false;
+        if (!query.length) return true;
         const searchable = key([row.name, row.lookup, row.search_name, row.vintage, ...(row.vintage_options || []),
           typeLabels.get(row.type), row.country, row.region, row.sheet, row.origin, row.section, row.terms, row.matched_name,
           ...searchPrices(row).flatMap((quote) => [quote.name, quote.vintage]),
           ...awineOffers(row).flatMap((offer) => [offer.name, offer.vintage])].join(" "));
         return query.every((word) => searchable.includes(word));
       });
-      if (sort !== "original") {
-        const [value, direction] = sorts[sort] || [(row) => metric(row, sort), -1];
-        shown.sort((a, b) => {
-          const first = value(a);
-          const second = value(b);
-          if (!Number.isFinite(first)) return Number.isFinite(second) ? 1 : 0;
-          if (!Number.isFinite(second)) return -1;
-          return direction * (first - second);
-        });
-      }
-      byId("row-count").textContent = `${fmt.format(shown.length)}개 표시 · 전체 ${fmt.format(rows.length)}개`;
+      shown.sort((a, b) => {
+        const first = sortValue(a);
+        const second = sortValue(b);
+        if (first === null) return second === null ? 0 : 1;
+        if (second === null) return -1;
+        return second - first;
+      });
+      const count = shown.length === rows.length ? `${fmt.format(shown.length)}개` : `${fmt.format(shown.length)} / ${fmt.format(rows.length)}개`;
+      byId("row-count").textContent = data.mode === "demo" ? `예시 · ${count}` : count;
       byId("export").disabled = shown.length === 0;
       byId("prices").hidden = shown.length === 0;
       byId("empty").hidden = shown.length !== 0;
@@ -1314,34 +1305,51 @@
     }
 
     function download() {
-      const header = ["원본 시트", "원본 행", "원본 위치", "행사 구분", "와인", "와인 유형", "생산국", "산지", "Wine-Searcher 검색명", "빈티지", "표기 빈티지",
-        "용량 mL", "용량 가정", "행사가 KRW", "카드 적용가 KRW", "판매 조건", "세계 세전 평균가 KRW 750mL", "원본 평균가", "원본 통화", "가격 차이 KRW", "할인율 %",
+      const header = [
+        "원본 시트", "원본 행", "원본 위치", "행사 구분", "와인", "와인 유형", "생산국", "산지",
+        "Wine-Searcher 검색명", "빈티지", "표기 빈티지", "용량 mL", "용량 가정",
+        "행사가 KRW", "카드 적용가 KRW", "판매 조건", "이마트 비교가 KRW", "이마트 비교가 구분",
+        "와인서쳐 비교가 KRW", "원본 평균가", "원본 통화", "와인서쳐 대비 차이 KRW", "와인서쳐 대비 차이율 %",
         "상태", "상세", "가격 기준일", "출처", "확인 상품명", "Wine-Searcher 링크",
-        "검색 평균가 세전 750mL (빈티지별)", "검색 가격 범위", "검색 가격 기준 월", "검색 조회일", "검색 원문 링크", "참고 가격 차이율 %",
+        "검색 평균가 세전 750mL (빈티지별)", "검색 집계 범위", "검색 가격 기준 월", "검색 조회일", "검색 원문 링크",
         "판매 매장 등급", "등급별 원본 위치", "검색 방식", "Google 검색 링크", "검색가별 가격 차이 KRW", "비교 참고 조건",
-        "에이와인 조회 결과", "에이와인 판매가 KRW", "에이와인 대비 일반가 차이 KRW", "에이와인 대비 카드가 차이 KRW",
-        "에이와인 상품명", "에이와인 빈티지", "에이와인 용량 mL", "에이와인 재고 표시", "에이와인 확인일", "에이와인 상품 링크", "에이와인 빈티지별 비교"];
-      const rows = shown.map((row) => [row.sheet, row.row, row.origin, row.section, row.name,
-        typeLabels.get(row.type), row.country, row.region, row.search_name || row.lookup, row.vintage,
-        row.vintage_options?.join("/"), row.volume_ml, row.assumed_volume ? "750mL 가정" : "", row.event_krw, row.card_krw, row.terms, row.market_krw,
-        row.market_original, row.market_currency, metric(row, "savings_krw"),
-        Number.isFinite(metric(row, "discount_pct")) ? Math.round(metric(row, "discount_pct") * 100) / 100 : null,
-        searchPrices(row).length ? "검색 평균가" : row.status, row.search_detail || row.detail, row.checked_at,
-        row.source, row.matched_name, safeSource(row.search_url || row.url),
-        searchPrices(row).map((quote) => `${comparisonVintageText(quote)} ${priceText(quote)}${quote.currency !== "KRW" && Number.isFinite(quote.krw) ? ` (${won(quote.krw)})` : ""}`).join(" / "),
-        searchPrices(row).map(scopeText).join(" / "),
-        searchPrices(row).map((quote) => quote.price_month || "미표시").join(" / "),
-        searchPrices(row)[0]?.checked_at, searchPrices(row).map((quote) => safeSource(quote.url)).join(" / "), row.reference_discount_pct,
-        row.grades?.join("·"), row.offer_sources?.map((entry) => `${entry.grade} ${entry.location}`).join(" / "),
-        searchPrices(row).map((quote) => sourceLabels[quote.source] || "Google 검색").join(" / "),
-        googleSearchLinks(row),
-        searchPrices(row).filter((quote) => Number.isFinite(quote.savings_krw)).map((quote) => `${comparisonVintageText(quote)} ${deltaText(quote.savings_krw, quote.savings_krw_high)}`).join(" / "),
-        row.comparison_note, awineStatus(row), awineOffers(row)[0]?.price_krw, awineOffers(row)[0]?.event_delta, awineOffers(row)[0]?.card_delta,
-        awineOffers(row)[0]?.name, awineOffers(row)[0]?.vintage, awineOffers(row)[0]?.volume_ml,
-        awineOffers(row).map(offerStock).join(" / "), awineOffers(row)[0]?.checked_at || data.awine_info?.checked_at,
-        awineOffers(row).map((offer) => safeSource(offer.url)).filter(Boolean).join(" / ") || safeSource(row.awine?.url),
-        awineOffers(row).map((offer) => [offer.event_vintage, won(offer.price_krw), Number.isFinite(offer.event_delta) && `일반 ${signedWon(offer.event_delta)}`,
-          Number.isFinite(offer.card_delta) && `카드 ${signedWon(offer.card_delta)}`, ...(offer.notes || [])].filter(Boolean).join(" · ")).join(" / ")]);
+        "에이와인 조회 결과", "에이와인 판매가 KRW", "에이와인 대비 차이 KRW", "에이와인 대비 차이율 %",
+        "에이와인 상품명", "에이와인 빈티지", "에이와인 용량 mL", "에이와인 재고 표시", "에이와인 확인일",
+        "에이와인 상품 링크", "에이와인 빈티지별 비교",
+      ];
+      const csvRate = (value) => value === null ? null : Math.round(value * 100) / 100;
+      const rows = shown.map((row) => {
+        const { emart, hasCard, awine, market, offer, quote } = row.comparison;
+        const quotes = searchPrices(row);
+        const offers = awineOffers(row);
+        return [
+          row.sheet, row.row, row.origin, row.section, row.name, typeLabels.get(row.type), row.country, row.region,
+          row.search_name || row.lookup, row.vintage, row.vintage_options?.join("/"), row.volume_ml,
+          row.assumed_volume ? "750mL 가정" : "",
+          row.event_krw, row.card_krw, row.terms, emart, hasCard ? "카드할인가" : "행사가",
+          market.price, quote?.price ?? row.market_original, quote?.currency ?? row.market_currency,
+          market.savings, csvRate(market.rate),
+          quotes.length ? "검색 평균가" : row.status, row.search_detail || row.detail, row.checked_at,
+          row.source, row.matched_name, safeSource(quote?.url || row.search_url || row.url),
+          quotes.map((item) => `${comparisonVintageText(item)} ${priceText(item)} (${krwText(item)})`).join(" / "),
+          quotes.map(scopeText).join(" / "), quotes.map((item) => item.price_month || "미표시").join(" / "),
+          quote?.checked_at, quotes.map((item) => safeSource(item.url)).filter(Boolean).join(" / "),
+          row.grades?.join("·"), row.offer_sources?.map((entry) => `${entry.grade} ${entry.location}`).join(" / "),
+          quotes.map((item) => sourceLabels[item.source] || "Google 검색").join(" / "), googleSearchLinks(row),
+          quotes.filter((item) => isPrice(item.krw) && isPrice(emart)).map((item) => {
+            const low = signedWon(item.krw - emart);
+            const range = isPrice(item.krw_high) && item.krw_high !== item.krw ? ` ~ ${signedWon(item.krw_high - emart)}` : "";
+            return `${comparisonVintageText(item)} ${low}${range}`;
+          }).join(" / "),
+          row.comparison_note, awineStatus(row), awine.price, awine.savings, csvRate(awine.rate),
+          offer?.name, offer?.vintage, offer?.volume_ml, offers.map(offerStock).join(" / "),
+          offer?.checked_at || data.awine_info?.checked_at,
+          offers.map((item) => safeSource(item.url)).filter(Boolean).join(" / ") || safeSource(row.awine?.url),
+          offers.map((item) => [item.event_vintage, won(item.price_krw),
+            isPrice(item.price_krw) && isPrice(emart) && signedWon(item.price_krw - emart),
+            ...(item.notes || [])].filter(Boolean).join(" · ")).join(" / "),
+        ];
+      });
       const csv = [header, ...rows].map((line) => line.map(csvCell).join(",")).join("\r\n");
       const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
       const link = element("a");
@@ -1356,6 +1364,11 @@
       document.querySelectorAll("[data-view]").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.view === view)));
     }
 
+    document.querySelectorAll(".utility[aria-controls]").forEach((button) => button.addEventListener("click", () => {
+      const panel = byId(button.getAttribute("aria-controls"));
+      panel.hidden = !panel.hidden;
+      button.setAttribute("aria-expanded", String(!panel.hidden));
+    }));
     document.querySelectorAll("[data-view]").forEach((button) => button.addEventListener("click", () => {
       setView(button.dataset.view);
       render();
