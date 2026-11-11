@@ -44,7 +44,7 @@ REPORT_HEADERS = {
 }
 TITLE_VINTAGE = re.compile(r"(?:\s+|\()((?:18|19|20)\d{2}|N\.?V\.?|논빈티지|무빈티지)\)?\s*$", re.IGNORECASE)
 LEADING_VINTAGE = re.compile(r"^((?:18|19|20)\d{2})\s+")
-SIZE = re.compile(r"(\d+(?:\.\d+)?)\s*(ml|cl|l|㎖|ℓ)", re.IGNORECASE)
+SIZE = re.compile(r"((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s*(ml|cl|l|㎖|ℓ)", re.IGNORECASE)
 PACK = re.compile(r"\b(?:case of|\d+\s*pack)\b|(?:[2-9]|\d{2,})\s*[x×]\s*\d|[x×]\s*(?:[2-9]|\d{2,})\b|"
                   r"(?:[2-9]|\d{2,})\s*(?:병|본입|종)|\s[+＋]\s|병\s*\+|세트|묶음|패키지", re.IGNORECASE)
 
@@ -167,7 +167,7 @@ def bottle_size(value: str) -> int | None:
     text = value.strip().casefold()
     measured = SIZE.fullmatch(text)
     if measured:
-        number = Decimal(measured[1]) * {"ml": 1, "㎖": 1, "cl": 10, "l": 1000, "ℓ": 1000}[measured[2]]
+        number = Decimal(measured[1].replace(",", "")) * {"ml": 1, "㎖": 1, "cl": 10, "l": 1000, "ℓ": 1000}[measured[2]]
     else:
         number = decimal_of(text)
     if number is None or not (0 < number <= 30000) or number != int(number):

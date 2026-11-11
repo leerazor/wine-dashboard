@@ -39,7 +39,7 @@ def _year(value: str) -> str | None:
 def _query(name: str) -> tuple[str, str]:
     title = RATING.sub("", name).strip()
     # A stated volume can sit between the wine name and vintage.
-    title = re.sub(r"(?<!\w)\d+(?:\.\d+)?\s*(?:ml|cl|l|㎖|ℓ)(?!\w)", "", title, flags=re.IGNORECASE)
+    title = re.sub(r"(?<!\w)(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?\s*(?:ml|cl|l|㎖|ℓ)(?!\w)", "", title, flags=re.IGNORECASE)
     title = re.sub(r"\s+(?:매그넘|마그넘|magnum)\s*$", "", title, flags=re.IGNORECASE)
     title = " ".join(title.split())
     series = VINTAGE_LIST.search(title)
