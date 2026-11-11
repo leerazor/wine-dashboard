@@ -22,6 +22,14 @@ python market_catalog.py --grade-a $a --grade-b $b --observations .work/google-o
 
 AI 개요에 가격이 없으면 일반 검색 결과의 `Avg Price (ex-tax)`도 사용합니다. 강조 표시로 나뉜 텍스트는 같은 결과 안에서 합쳐 읽고, 결과 제목·빈티지와 원문 주소를 확인합니다. 예를 들어 `site:wine-searcher.com "2021" "Aphrodite" "Avg Price"` 검색에서 투핸즈 아프로디테 2021의 `$128 / 750ml`를 확인했습니다. 빈티지 미지정 결과의 가격이나 다른 상품의 가격은 대체하지 않습니다. 검색 요약에 전 세계라는 문구가 없으면 범위를 미확인으로 표시합니다.
 
+평균가가 비어 있는 상품·빈티지만 일반 검색 결과로 다시 조회하려면 다음과 같이 실행하세요. 국가로 제한된 결과는 전 세계 평균이 명시된 경우에만 새 가격으로 채택합니다. 검색 결과가 없던 항목을 같은 저장 파일에서 다시 조회할 때는 `--retry-unpriced`를 추가할 수 있습니다.
+
+```powershell
+python market_catalog.py --refresh-page --unpriced-only --query-plan .work/missing-google-queries.json --output .work/catalog.html
+python google_prices.py .work/missing-google-queries.json --snippet-search --output .work/missing-google-observations.jsonl
+python market_catalog.py --refresh-page --observations .work/missing-google-observations.jsonl
+```
+
 현재 대시보드의 목록으로 가격만 갱신할 때는 다음 명령을 사용합니다. 브라우저에서 저장한 Google 검색 결과를 가져올 때는 `--captures`에 각 검색의 `name`, `vintage`, `url`, `checked_at`, `snapshot`이 담긴 JSONL 파일을 지정합니다. 조회한 항목은 가격 유무와 관계없이 검색 링크와 날짜를 보관합니다.
 
 ```powershell
@@ -29,7 +37,7 @@ python market_catalog.py --refresh-page --observations .work/google-observations
 python market_catalog.py --refresh-page --captures .work/google-captures.jsonl
 ```
 
-가격 차이는 검색가의 원화 환산액에서 일반 장터가를 뺍니다. 검색 가격 범위는 양 끝의 차이를 표시합니다. 가격이 있는 모든 판매 행은 차이를 계산하며, 복수·미표기 빈티지 또는 다른 행사 용량·구성은 참고 조건을 표시합니다. CSV에는 등급과 출처, 가격 차이가 포함됩니다.
+가격 차이는 검색가의 원화 환산액에서 일반 장터가를 뺍니다. 검색 가격 범위는 양 끝의 차이를 표시합니다. 가격이 있는 모든 판매 행은 차이를 계산하며, 복수·미표기 빈티지 또는 다른 행사 용량·구성은 참고 조건을 표시합니다. 정렬에서 카드 적용가와 별개로 이마트 일반 행사가의 낮은순과 높은순을 선택할 수 있습니다. CSV에는 등급과 출처, 가격 차이가 포함됩니다.
 
 ## 1. 원본 목록 확인
 

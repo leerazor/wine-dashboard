@@ -3,6 +3,7 @@
 import unittest
 
 from google_prices import cited_product, observation
+from market_catalog import query_plan
 
 
 NAME = "Two Hands Wines Aphrodite Cabernet Sauvignon"
@@ -110,6 +111,56 @@ class GoogleSnippetTests(unittest.TestCase):
         self.assertIsNotNone(cited_product(SOURCE, NAME, "2021", CHECKED_AT))
         self.assertIsNone(cited_product(SOURCE.replace("/2021", "/2017"), NAME, "2021", CHECKED_AT))
         self.assertIsNone(cited_product(SOURCE.replace("aphrodite", "bellas+garden"), NAME, "2021", CHECKED_AT))
+
+    def test_conflicting_year_in_result_description_is_rejected(self):
+        self.assertIsNone(self.read_quote(snapshot=SNAPSHOT.replace('- emphasis: "2021"', '- emphasis: "2019"', 1)))
+
+    def test_country_filtered_price_requires_explicit_worldwide_average(self):
+        local = SNAPSHOT.replace(SOURCE, SOURCE + "/usa")
+        self.assertIsNone(self.read_quote(snapshot=local))
+        worldwide = local.replace("- emphasis: Avg Price", "- emphasis: Global Avg Price")
+        self.assertEqual(self.read_quote(snapshot=worldwide)["scope"], "worldwide")
+
+    def test_known_cuvee_path_does_not_accept_another_1865_wine(self):
+        snippet = '''
+- main:
+  - link "Vina San Pedro 1865 Prelusion":
+    - /url: https://www.wine-searcher.com/find/vina+st+pedro+1865+single+select+cab+sauv+maipo+valley+chile
+    - heading "Vina San Pedro 1865 Prelusion" [level=3]
+  - text: Avg Price (ex-tax) $21 / 750ml.
+'''
+        self.assertIsNone(self.read_quote(name="San Pedro 1865 Prelude", vintage=None, snapshot=snippet))
+        exact = snippet.replace("single+select+cab+sauv", "prelusion").replace("$21", "$72")
+        self.assertEqual(self.read_quote(name="San Pedro 1865 Prelude", vintage=None, snapshot=exact)["price"], "72")
+
+    def test_long_pichon_baron_label_does_not_include_second_wine(self):
+        second_wine = '''
+  - link "2017 Les Tourelles de Pichon Baron":
+    - /url: https://www.wine-searcher.com/find/les+tourelles+de+pichon+baron+pauillac+medoc+bordeaux+france/2017
+    - heading "2017 Les Tourelles de Pichon Baron" [level=3]
+  - text: Avg Price (ex-tax) $65 / 750ml.
+'''
+        grand_vin = '''
+  - link "2017 Chateau Pichon-Longueville au Baron de ...":
+    - /url: https://www.wine-searcher.com/find/pichon+longueville+au+baron+de+pauillac+medoc+bordeaux+france/2017
+    - heading "2017 Chateau Pichon-Longueville au Baron de ..." [level=3]
+  - text: Find the best local price for
+  - emphasis: 2017 Chateau Pichon-Longueville
+  - text: au Baron de Pichon-Longueville, Pauillac, France.
+  - emphasis: Avg Price
+  - text: (ex-tax) $194 / 750ml.
+'''
+        self.assertIsNone(self.read_quote(name="Chateau Pichon Baron", vintage="2017", snapshot=second_wine))
+        quote = self.read_quote(name="Chateau Pichon Baron", vintage="2017", snapshot=second_wine + grand_vin)
+        self.assertEqual(quote["price"], "194")
+
+
+class RetryPlanTests(unittest.TestCase):
+    def test_displayed_vintage_with_legacy_query_metadata_is_not_retried(self):
+        row = {"name": "Almaviva 19/23", "search_name": "Almaviva", "grades": ["A", "B"],
+               "vintage": None, "vintage_options": ["2019", "2023"],
+               "search_prices": [{"vintage": "2019", "query_vintage": None}]}
+        self.assertEqual(query_plan([row], unpriced_only=True), [{"name": "Almaviva", "vintage": "2023"}])
 
 
 if __name__ == "__main__":

@@ -89,13 +89,16 @@ def combine(a_path: Path, b_path: Path, base: Path) -> tuple[dict, list[dict]]:
     return data, previous
 
 
-def query_plan(rows: list[dict]) -> list[dict]:
+def query_plan(rows: list[dict], *, unpriced_only: bool = False) -> list[dict]:
     queries = {}
+    priced = {(normalize(query_name(row)), vintage) for row in rows for vintage in vintages(row)
+              if any(vintage is None or quote.get("vintage") == vintage
+                     for quote in row.get("search_prices", []))} if unpriced_only else set()
     for row in sorted(rows, key=lambda row: len(row["grades"]) != 1 or row["grades"][0] != "A"):
         for vintage in vintages(row):
             name = query_name(row)
             key = (normalize(name), vintage)
-            if key not in queries:
+            if key not in queries and key not in priced:
                 queries[key] = {"name": name, "vintage": vintage}
     return list(queries.values())
 
@@ -228,6 +231,7 @@ def main() -> None:
     parser.add_argument("--observations", type=Path, nargs="+", default=[])
     parser.add_argument("--captures", type=Path, nargs="+", default=[], help="브라우저에서 저장한 Google 검색 결과 JSONL")
     parser.add_argument("--query-plan", type=Path)
+    parser.add_argument("--unpriced-only", action="store_true", help="조회 계획에 평균가가 없는 상품·빈티지만 포함")
     args = parser.parse_args()
     if args.refresh_page:
         if args.grade_a or args.grade_b:
@@ -265,7 +269,7 @@ def main() -> None:
     update_page(args.output, data, PAGE)
     if args.query_plan:
         args.query_plan.parent.mkdir(parents=True, exist_ok=True)
-        args.query_plan.write_text(json.dumps(query_plan(data["rows"]), ensure_ascii=False), encoding="utf-8")
+        args.query_plan.write_text(json.dumps(query_plan(data["rows"], unpriced_only=args.unpriced_only), ensure_ascii=False), encoding="utf-8")
     print(json.dumps({**data["grade_info"], **data["search_info"]}, ensure_ascii=False))
 
 
