@@ -9,9 +9,9 @@ import time
 from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
-from urllib.parse import quote, urlsplit
+from urllib.parse import quote, unquote_plus, urlsplit
 
-from naver_snapshot import name_words, parse_quote, same_product
+from naver_snapshot import APPENDED_WORDS, AVERAGE as SNIPPET_AVERAGE, SYMBOLS, name_words, parse_quote
 from wine_searcher import decimal_of, normalize
 
 
@@ -26,6 +26,83 @@ USD_PRICE = re.compile(r"(?<![\w$])(?:US\$|USD\s*|\$)\s*(\d[\d,]*(?:\.\d+)?)(?:\
 BLOCK = re.compile(r"unusual traffic|automated queries|verify you are human|비정상적인 트래픽", re.I)
 WS_LINK = re.compile(r"https://www\.wine-searcher\.com/find/[^\s\"<>]+")
 TEXT = re.compile(r"- (?:strong|text|emphasis):\s*(.+)")
+PRODUCER_WORDS = {"chateau", "domaine", "maison", "estate", "vineyards", "vineyard", "winery", "wines", "cantina", "cellars",
+                  "castello", "weingut", "kellerei", "co", "company", "figli", "vignoble"}
+GEOGRAPHY = APPENDED_WORDS | set("veneto friuli isonzo venezia giulia istriana appellation docg cote beaune nuits sauternes barsac menfi".split())
+IDENTITY_ALIASES = {
+    normalize("Dal Forno Romano Amarone della Valpolicella"): ("Dal Forno Romano Vigneto Monte Lodoletta Amarone della Valpolicella DOCG Italy",),
+    normalize("Dal Forno Romano Valpolicella Superiore"): ("Dal Forno Romano Vigneto Monte Lodoletta Valpolicella Superiore",),
+    normalize("Les Tourelles de Longueville"): ("Les Tourelles de Pichon Baron",),
+    normalize("Clos Quebrada de Macul Domus Aurea"): ("Vina Quebrada de Macul Domus Aurea Cabernet Sauvignon",),
+    normalize("Antinori Solaia"): ("Marchesi Antinori Solaia Toscana IGT",),
+    normalize("Chateau La Tour Carnet"): ("Bernard Magrez Chateau La Tour Carnet",),
+    normalize("The Prisoner Cabernet Sauvignon"): ("The Prisoner Wine Co Cabernet Sauvignon",),
+    normalize("Ferraton Pere et Fils Ermitage Les Miaux"): ("Ferraton Pere & Fils Hermitage Les Miaux",),
+    normalize("Bava Rosetta"): ("Bava Rosetta Malvasia di Castelnuovo Don Bosco",),
+    normalize("Francois Martenot Chablis Montflory"): ("Francois Martenot Chablis Monflory",),
+    normalize("Domaine Berthenet Bourgogne Chardonnay Pur Sang"): ("Domaine Berthenet Bourgogne Chardonnay Pur Sans",),
+    normalize("Henri de Boursaulx Chablis"): ("Henry de Boursaulx Chablis",),
+    normalize("Jean-Marie Fourrier Vigne Comte de Chapelle Meursault Blanc"): ("Jean-Marie Fourrier Vigne Comte de Chapelle Meursault",),
+    normalize("Michel Magnien Cote de Nuits Villages Rouge"): ("Domaine Michel Magnien Cote de Nuits-Villages",),
+    normalize("Domaine Matrot Auxey-Duresses Rouge"): ("Domaine Matrot Auxey-Duresses",),
+    normalize("Domaine Drouhin Oregon Laurene Pinot Noir"): ("Domaine Drouhin Laurene Pinot Noir",),
+    normalize("Domaine Drouhin Oregon Arthur Chardonnay"): ("Domaine Drouhin Arthur Chardonnay",),
+    normalize("Vidal Fleury Crozes-Hermitage Rouge"): ("J. Vidal-Fleury Crozes-Hermitage",),
+    normalize("Vidal Fleury Hermitage Rouge"): ("J. Vidal-Fleury Hermitage",),
+    normalize("Andre Clouet Dream Vintage"): ("Andre Clouet Dream Vintage Brut",),
+    normalize("Bernard Bremont Cuvee Prestige Grand Cru"): ("Bernard Bremont Cuvee Prestige Brut",),
+    normalize("Batasiolo Pinot Chardonnay Spumante Brut"): ("Beni di Batasiolo Pinot Noir Chardonnay Spumante Brut",),
+    normalize("Miteruno Mayacaba"): ("Mi Terruno Mayacaba Malbec",),
+    normalize("Alibranzia Barolo Poiana"): ("Alibrianza Cascina Radice Poiane Barolo DOCG",),
+    normalize("Alibranzia Barbaresco"): ("Alibrianza Barbaresco",),
+    normalize("Erickson & Caradine Napa Valley Cabernet Sauvignon"): ("Erikson & Caradin Napa Valley Cabernet Sauvignon",),
+    normalize("Erickson & Caradine Napa Valley Chardonnay"): ("Erikson & Caradin Napa Valley Chardonnay",),
+    normalize("Harmos Pole"): ("El Chantre Ramos Paul", "Ramos-Paul"),
+}
+SEARCH_NAME_CORRECTIONS = {key: IDENTITY_ALIASES[key][0] for key in (
+    normalize("Francois Martenot Chablis Montflory"), normalize("Domaine Berthenet Bourgogne Chardonnay Pur Sang"),
+    normalize("Henri de Boursaulx Chablis"), normalize("Miteruno Mayacaba"), normalize("Alibranzia Barolo Poiana"),
+    normalize("Alibranzia Barbaresco"), normalize("Erickson & Caradine Napa Valley Cabernet Sauvignon"),
+    normalize("Erickson & Caradine Napa Valley Chardonnay"), normalize("Harmos Pole"))}
+
+
+def canonical_name(name: str) -> str:
+    return SEARCH_NAME_CORRECTIONS.get(normalize(name), name)
+SLUG_WORDS = {"cab": "cabernet", "sauv": "sauvignon", "chard": "chardonnay", "dom": "domaine",
+              "superior": "superiore", "hand": "hands", "shiraz": "syrah", "rsrv": "reserve"}
+
+
+def cited_product(url: str, name: str, vintage: str | None, checked_at: str) -> dict | None:
+    parts = urlsplit(url).path.strip("/").split("/")
+    if len(parts) < 2 or parts[0] != "find":
+        return None
+    code = parts[2].upper() if len(parts) > 2 else "1"
+    year = code if re.fullmatch(r"(?:18|19|20)\d{2}|NV", code) else None
+    if vintage is not None and year not in (None, vintage):
+        return None
+    slug = " ".join(SLUG_WORDS.get(word, word) for word in unquote_plus(parts[1]).split())
+    expected = " ".join(SLUG_WORDS.get(word.lower(), word) for word in name.split())
+    if not identity_matches(expected, slug):
+        return None
+    return {"name": name, "vintage": vintage or year, "currency": "USD", "url": clean_source(url),
+            "checked_at": checked_at, "seller_market": "", "price_month": None,
+            "citation_note": "AI 인용 페이지의 빈티지 미표기" if vintage and year is None else ""}
+
+
+def identity_matches(expected: str, actual: str, full_product: str = "") -> bool:
+    def words(value: str) -> frozenset[str]:
+        value = re.sub(r"\bg[.\s]*d[.\s]+vajra\b", "gd vajra", value, flags=re.I)
+        return name_words(value) - PRODUCER_WORDS
+
+    expected_names = (expected, *IDENTITY_ALIASES.get(normalize(expected), ()))
+    candidates = (actual, full_product)
+    for name in expected_names:
+        target = words(name)
+        for candidate in candidates:
+            found = words(candidate)
+            if target and (found == target or (target < found and found - target <= GEOGRAPHY)):
+                return True
+    return False
 
 
 def search_url(name: str, vintage: str | None) -> str:
@@ -47,25 +124,47 @@ def organic_quotes(lines: list[str], name: str, vintage: str | None, checked_at:
         product = next((context[context.lower().index("find the best "):].strip('"')
                         for context in reversed(block) if "find the best " in context.lower()), "")
         match = TEXT.search(line)
-        if not (source and product and match):
+        title_line = next((context for context in reversed(block) if 'heading "' in context and '[level=3]' in context), "")
+        title = re.sub(r'^.*?heading "|" \[level=3\].*$', "", title_line)
+        title = re.sub(r"^Best local price for\s+", "", title, flags=re.I)
+        title = re.split(r"\s+-\s+stores near|\s+-\s+Wine-Searcher", title, maxsplit=1, flags=re.I)[0]
+        if not (source and match):
             continue
         average = re.sub(r"(?<![\w$])\$(?=\s*\d)", "US$", match[1].strip('"').replace(";", " "))
-        result = parse_quote({"link": source, "description": f"{product} {average}"}, checked_at)
-        if result and (vintage is None or result.vintage == vintage) and same_product(name_words(name), name_words(result.name)):
+        result = parse_quote({"link": source, "description": f"{product} {average}", "title": title}, checked_at)
+        full_product = re.sub(r"^find the best (?:local )?price for\s+", "", product, flags=re.I)
+        full_product = re.sub(r"^(?:18|19|20)\d{2}\s+", "", full_product).rstrip(".")
+        if result and (vintage is None or result.vintage == vintage) and identity_matches(name, result.name, full_product):
             quotes.append(asdict(result))
+            continue
+        # Some Google snippets display just a title and an average-price line.
+        year_match = re.fullmatch(r"https://www\.wine-searcher\.com/find/[^/]+/((?:18|19|20)\d{2}|NV|1)(?:/.*)?(?:\?.*)?", source, re.I)
+        amount = SNIPPET_AVERAGE.search(average)
+        actual = re.sub(r"^(?:18|19|20)\d{2}\s+", "", title)
+        if not (year_match and amount and identity_matches(name, actual, full_product)):
+            continue
+        year = None if year_match[1] == "1" else year_match[1].upper()
+        if vintage is not None and year != vintage:
+            continue
+        quotes.append({"name": actual or name, "vintage": year, "price": amount["amount"].replace(",", ""),
+                       "currency": SYMBOLS.get(amount["currency"].upper(), amount["currency"].upper()),
+                       "scope": "worldwide" if amount["scope"] else "unspecified", "seller_market": "",
+                       "url": clean_source(source), "checked_at": checked_at, "price_month": None})
     return quotes
 
 
-def overview_quote(lines: list[str], matched: list[dict], name: str, vintage: str | None) -> dict | None:
+def overview_quote(lines: list[str], matched: list[dict], name: str, vintage: str | None, checked_at: str) -> dict | None:
     # Validate the displayed identity and price against a cited, matching product page.
     links = {clean_source(match[0]) for line in lines if (match := WS_LINK.search(line))}
     cited = [quote for quote in matched if quote["url"] in links]
+    if not cited:
+        cited = [candidate for url in sorted(links) if (candidate := cited_product(url, name, vintage, checked_at))]
     if not cited:
         return None
     rendered = [match[1].strip('"') for line in lines if (match := TEXT.search(line))]
     body = " ".join(rendered)
     lead = body[:650]
-    if normalize(name) not in normalize(lead) or not (TAX.search(lead) and UNIT.search(lead) and AVERAGE.search(lead)):
+    if not (TAX.search(lead) and UNIT.search(lead) and AVERAGE.search(lead)):
         return None
     if vintage and not re.search(rf"(?<![\w\d]){re.escape(vintage)}(?![A-Za-z0-9])", lead, re.I):
         return None
@@ -73,6 +172,13 @@ def overview_quote(lines: list[str], matched: list[dict], name: str, vintage: st
         return None
     headline = USD_PRICE.search(lead)
     if not headline or not AVERAGE.search(lead[:headline.start()]):
+        return None
+    identity = lead[:headline.start()]
+    labels = (name, canonical_name(name), *IDENTITY_ALIASES.get(normalize(name), ()))
+    if not any(normalize(label) in normalize(identity) for label in labels) and not identity_matches(name, identity):
+        return None
+    first_year = re.search(r"(?<!\d)(?:18|19|20)\d{2}(?!\d)", identity)
+    if vintage and vintage != "NV" and first_year and first_year[0] != vintage:
         return None
     scope = "ai_worldwide" if GLOBAL.search(lead[:headline.start()]) else "unspecified"
     chosen = headline
@@ -90,21 +196,25 @@ def overview_quote(lines: list[str], matched: list[dict], name: str, vintage: st
     source = max(cited, key=lambda q: (q["vintage"] == vintage, not q["seller_market"]))
     return {**source, "source": "google_ai", "price": str(low), "price_high": str(high) if high else None,
             "currency": "USD", "scope": scope, "price_month": None, "seller_market": "",
-            "snippet_price": source["price"], "snippet_currency": source["currency"]}
+            "snippet_price": source.get("price"), "snippet_currency": source["currency"] if source.get("price") else None}
 
 
 def observation(snapshot: str, name: str, vintage: str | None, url: str, checked_at: str) -> dict:
     lines = snapshot.splitlines()
     start = next((i for i, line in enumerate(lines) if OVERVIEW.search(line)), None)
-    end = next((i for i, line in enumerate(lines) if WEB_RESULTS.search(line) and (start is None or i > start)), len(lines))
-    matches = organic_quotes(lines[end:] if end < len(lines) else lines, name, vintage, checked_at)
-    ai = overview_quote(lines[start + 1:end], matches, name, vintage) if start is not None else None
+    end = next((i for i, line in enumerate(lines) if (WEB_RESULTS.search(line) or
+               (start is not None and re.search(r'^\s*- heading .*\[level=2\]', line))) and
+               (start is None or i > start)), len(lines))
+    organic = lines[:start] + lines[end:] if start is not None else lines
+    matches = organic_quotes(organic, name, vintage, checked_at)
+    ai = overview_quote(lines[start + 1:end], matches, name, vintage, checked_at) if start is not None else None
     ordinary = max(matches, key=lambda q: (q["scope"] == "worldwide", q["vintage"] == vintage,
                                            not q["seller_market"]), default=None)
     selected = ai or ({**ordinary, "source": "google_snippet"} if ordinary else None)
     if selected:
         selected["google_url"] = url
-    return {"name": name, "vintage": vintage, "checked_at": checked_at, "quote": selected}
+        selected["query_vintage"] = vintage
+    return {"name": name, "vintage": vintage, "checked_at": checked_at, "google_url": url, "quote": selected}
 
 
 def collect(plan: Path, output: Path, limit: int | None, delay: float, executable: Path | None) -> int:
@@ -119,8 +229,8 @@ def collect(plan: Path, output: Path, limit: int | None, delay: float, executabl
             for line in source:
                 if line.strip():
                     item = json.loads(line)
-                    cached.add((normalize(item["name"]), item.get("vintage")))
-    pending = [entry for entry in entries if (normalize(entry["name"]), entry.get("vintage")) not in cached]
+                    cached.add((normalize(canonical_name(item["name"])), item.get("vintage")))
+    pending = [entry for entry in entries if (normalize(canonical_name(entry["name"])), entry.get("vintage")) not in cached]
     if not pending:
         return 0
     output.parent.mkdir(parents=True, exist_ok=True)

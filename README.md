@@ -1,6 +1,6 @@
 # 이마트 와인장터 가격 비교
 
-이마트 와인장터 A·B등급 매장 행사가를 Wine-Searcher의 **세전 750mL 검색 평균가**와 비교합니다. Google AI 개요 추정가, Google 검색 요약, 이전 네이버 검색가를 출처별로 구분합니다.
+이마트 와인장터 A·B등급 매장 행사가를 Google 검색에서 확인한 Wine-Searcher의 **세전 750mL 평균가**와 비교합니다. Google AI 개요 추정가와 일반 검색 요약에 나온 평균가를 표시합니다.
 
 ## A·B등급 통합과 Google 검색
 
@@ -19,6 +19,13 @@ python market_catalog.py --grade-a $a --grade-b $b --observations .work/google-o
 검색어는 빈티지와 생산자·큐베의 영문명에 `wine-searcher worldwide avg price ex-tax 750ml`을 붙입니다. 표기된 빈티지가 여러 개면 빈티지별로 조회하고, 빈티지가 미표기된 와인의 검색가는 참고로 표시합니다. 영문명은 `wine_aliases.tsv`와 `grade_catalog.tsv`를 사용합니다.
 
 수집기는 상품·빈티지가 일치하는 Wine-Searcher 검색 요약과 AI 개요의 가격을 확인합니다. AI 개요에서 단위와 세전 기준, 일치하는 인용 상품을 확인할 수 있으면 AI 추정가를 우선 표시합니다. 같은 상품의 일반 검색 요약 가격이 다르면 함께 표시합니다. Google에서 자동 트래픽 확인 화면이 나오면 수집을 중단합니다. 다음 실행은 저장된 항목을 건너뜁니다.
+
+현재 대시보드의 목록으로 가격만 갱신할 때는 다음 명령을 사용합니다. 브라우저에서 저장한 Google 검색 결과를 가져올 때는 `--captures`에 각 검색의 `name`, `vintage`, `url`, `checked_at`, `snapshot`이 담긴 JSONL 파일을 지정합니다. 조회한 항목은 가격 유무와 관계없이 검색 링크와 날짜를 보관합니다.
+
+```powershell
+python market_catalog.py --refresh-page --observations .work/google-observations.jsonl
+python market_catalog.py --refresh-page --captures .work/google-captures.jsonl
+```
 
 가격 차이는 검색가의 원화 환산액에서 일반 장터가를 뺍니다. 검색 가격 범위는 양 끝의 차이를 표시합니다. 가격이 있는 모든 판매 행은 차이를 계산하며, 복수·미표기 빈티지 또는 다른 행사 용량·구성은 참고 조건을 표시합니다. CSV에는 등급과 출처, 가격 차이가 포함됩니다.
 
