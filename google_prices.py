@@ -28,7 +28,7 @@ WS_LINK = re.compile(r"https://www\.wine-searcher\.com/find/[^\s\"<>]+")
 TEXT = re.compile(r"- (?:strong|text|emphasis):\s*(.+)")
 PRODUCER_WORDS = {"chateau", "domaine", "maison", "estate", "vineyards", "vineyard", "winery", "wines", "cantina", "cellars",
                   "castello", "weingut", "kellerei", "co", "company", "figli", "vignoble"}
-GEOGRAPHY = APPENDED_WORDS | set("veneto friuli isonzo venezia giulia istriana appellation docg cote beaune nuits sauternes barsac menfi".split())
+GEOGRAPHY = APPENDED_WORDS | set("veneto friuli isonzo venezia giulia istriana appellation docg cote beaune nuits sauternes barsac menfi barossa".split())
 IDENTITY_ALIASES = {
     normalize("Dal Forno Romano Amarone della Valpolicella"): ("Dal Forno Romano Vigneto Monte Lodoletta Amarone della Valpolicella DOCG Italy",),
     normalize("Dal Forno Romano Valpolicella Superiore"): ("Dal Forno Romano Vigneto Monte Lodoletta Valpolicella Superiore",),
@@ -114,7 +114,27 @@ def clean_source(url: str) -> str:
     return urlsplit(url)._replace(query="", fragment="").geturl()
 
 
+def join_text_fragments(lines: list[str]) -> list[str]:
+    """Rejoin a snippet split into text/emphasis nodes without crossing links."""
+    joined = []
+    previous_indent = None
+    for line in lines:
+        fragment = re.fullmatch(r"(\s*)- (?:text|strong|emphasis):\s*(.+)", line)
+        if fragment:
+            indent, value = fragment[1], fragment[2].strip('"')
+            if previous_indent == indent:
+                joined[-1] += " " + value
+            else:
+                joined.append(f"{indent}- text: {value}")
+            previous_indent = indent
+        else:
+            joined.append(line)
+            previous_indent = None
+    return joined
+
+
 def organic_quotes(lines: list[str], name: str, vintage: str | None, checked_at: str) -> list[dict]:
+    lines = join_text_fragments(lines)
     quotes = []
     for index, line in enumerate(lines):
         if not re.search(r"(?:avg\.?|average) price\s*\(ex.tax\)", line, re.I) or not UNIT.search(line):
