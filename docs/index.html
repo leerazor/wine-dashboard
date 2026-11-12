@@ -48,7 +48,7 @@
     }
     input::placeholder { color: var(--muted); }
     select { text-overflow: ellipsis; }
-    .result-bar { display: flex; align-items: center; gap: 4px; margin-top: 3px; }
+    .result-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 3px; }
     .count { flex: 1; margin: 0; color: var(--muted); font-size: .8rem; }
     .utility, .detail-toggle {
       min-height: 36px; min-width: 44px; border: 1px solid transparent; border-radius: 6px;
@@ -56,6 +56,8 @@
     }
     .utility:hover:not(:disabled), .detail-toggle:hover,
     .utility[aria-expanded="true"], .detail-toggle[aria-expanded="true"] { color: var(--wine); background: var(--sand); }
+    .recommend-toggle { color: var(--wine); border-color: var(--line); }
+    .recommend-toggle[aria-pressed="true"] { color: white; border-color: var(--wine); background: var(--wine); }
     .control-panel { margin: 4px 0 9px; padding: 10px; border-radius: 8px; background: var(--paper); }
     .segments { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
     .segment {
@@ -101,7 +103,8 @@
       font-size: .78rem; line-height: 1.5; word-break: keep-all;
     }
     .detail-content section { min-width: 0; }
-    .detail-content h2 { font-size: .85rem; color: var(--wine); margin: 0 0 4px; }
+    .detail-content h2, .detail-content h3 { font-size: .85rem; color: var(--wine); margin: 0 0 4px; }
+    .detail-content h3 { margin-top: 10px; }
     .detail-content p { margin: 3px 0; }
     .detail-content a { display: inline-block; margin: 3px 9px 0 0; }
     .detail-content .quote + .quote { border-top: 1px solid var(--line); margin-top: 7px; padding-top: 4px; }
@@ -158,6 +161,7 @@
       </div>
       <div class="result-bar">
         <p id="row-count" class="count" role="status" aria-live="polite"></p>
+        <button type="button" class="utility recommend-toggle" id="recommendations-filter" aria-label="카페 추천" aria-pressed="false" hidden>추천</button>
         <button type="button" class="utility" aria-expanded="false" aria-controls="filters">필터</button>
         <button type="button" class="utility" aria-expanded="false" aria-controls="guide">비교 기준</button>
         <button type="button" class="utility" id="export" aria-label="CSV 받기" disabled>CSV</button>
@@ -201,6 +205,7 @@
         <p>절약액은 비교 출처 가격에서 이마트가를 뺀 금액입니다. 차이율은 절약액을 비교 출처 가격으로 나눈 비율입니다. 양수면 이마트가 더 저렴합니다.</p>
         <p>에이와인은 공식 판매가 중 우선 매칭된 상품을 사용합니다. 와인서쳐는 Google 검색에 표시된 세전 750mL 원화 환산가 중 최저값을 사용합니다. 가격 범위는 하한을 적용합니다.</p>
         <p>빈티지·용량·집계 범위와 행사 조건은 각 와인의 상세에서 확인할 수 있습니다.</p>
+        <p>추천 필터는 네이버 카페 네 글의 목록과 이마트 행사 상품을 대조한 결과입니다. 국내 최저가 비교표에 나온 상품도 포함합니다. 와인별 상세에서 출처와 게시글의 빈티지를 확인할 수 있습니다.</p>
         <p id="provider-info"></p>
         <button type="button" id="demo-toggle" class="utility" aria-pressed="false">예시 보기</button>
       </div>
@@ -225,6 +230,201 @@
   </main>
   <noscript><p class="wrap">가격 검색과 정렬을 사용하려면 JavaScript를 켜 주세요.</p></noscript>
 
+  <script type="application/json" id="wine-recommendations">
+    {
+      "sources": {
+        "374141": {"label": "국내 최저가 비교", "url": "https://m.cafe.naver.com/ca-fe/web/cafes/20564405/articles/374141?fromList=true&tc=cafe_home_popular_articles"},
+        "374217": {"label": "평론가 90~94점 가격 비교", "url": "https://m.cafe.naver.com/ca-fe/web/cafes/20564405/articles/374217?fromList=true&tc=cafe_home_popular_articles", "login": true},
+        "374354": {"label": "개인 추천 리스트", "url": "https://m.cafe.naver.com/ca-fe/web/cafes/20564405/articles/374354?fromList=true&tc=cafe_home_popular_articles", "login": false},
+        "374394": {"label": "구매 예정 리스트", "url": "https://m.cafe.naver.com/ca-fe/web/cafes/20564405/articles/374394?fromList=true&tc=cafe_home_popular_articles", "login": true}
+      },
+      "offers": {
+        "B!6": {"name": "샤또 무똥 로칠드 2023", "posts": {"374141": null}},
+        "B!10": {"name": "샤또 빠쁘클레망 블랑", "posts": {"374141": null}},
+        "B!20": {"name": "샤또 까망삭 19/20/21/23", "posts": {"374217": null}},
+        "B!23": {"name": "오르넬라이아", "posts": {"374141": null}},
+        "B!24": {"name": "페리에주에 벨에포크", "posts": {"374141": null, "374217": null}},
+        "B!25": {"name": "알마비바 19/23", "posts": {"374141": null}},
+        "B!27": {"name": "폰토디 플라치아넬로 델라 피에베 2021 (R.P 98)", "posts": {"374141": null}},
+        "B!29": {"name": "루체 부르넬로 디 몬탈치노", "posts": {"374141": null, "374217": null, "374394": "2019"}},
+        "B!30": {"name": "루체", "posts": {"374217": null}},
+        "B!31": {"name": "쉐이퍼 TD-9", "posts": {"374141": null, "374217": null}},
+        "B!32": {"name": "마크에브라 스폐셜클럽 밀레짐", "posts": {"374217": null}},
+        "B!34": {"name": "지스꾸르 21/23", "posts": {"374217": null}},
+        "B!35": {"name": "샤또 딸보 21/23", "posts": {"374141": null, "374217": null}},
+        "B!36": {"name": "도머스 어리어 2022", "posts": {"374217": null}},
+        "B!37": {"name": "파토리아 데이 바르비 BDM 19/21", "posts": {"374141": null, "374217": null}},
+        "B!38": {"name": "프루노토 바롤로", "posts": {"374141": null, "374217": null}},
+        "B!39": {"name": "페냐롤렌 아줄 2021", "posts": {"374217": null}},
+        "B!40": {"name": "덕혼 패러덕스", "posts": {"374141": null, "374217": null}},
+        "B!49": {"name": "샤또 리외섹 13/16", "posts": {"374217": null}},
+        "B!50": {"name": "알렉스 감발 볼네 2018", "posts": {"374217": null}},
+        "B!53": {"name": "알렉스 감발 옥세뒤레스 루즈 2021", "posts": {"374217": null}},
+        "B!55": {"name": "마칸 클라시코", "posts": {"374141": null, "374217": null}},
+        "B!56": {"name": "샤또 라퐁 로쉐 2021", "posts": {"374141": null}},
+        "B!57": {"name": "샤또 샤스스플린 20/21/22", "posts": {"374141": null, "374217": null}},
+        "B!62": {"name": "도미니오드핑구스 플로드핑구스", "posts": {"374217": null}},
+        "B!66": {"name": "이스까이 쉬라 비오니에 1.5L", "posts": {"374354": null}},
+        "B!67": {"name": "샴페인 필립포나 리저브 브뤼", "posts": {"374354": null}},
+        "B!68": {"name": "포지오 안티코 BDM 2017", "posts": {"374217": null}},
+        "B!69": {"name": "페레보베 비니예스 바이에스", "posts": {"374217": null}},
+        "B!71": {"name": "하모스 폴 05/06", "posts": {"374141": null}},
+        "B!72": {"name": "포지오 안티코 로쏘 디 몬탈치노 2020", "posts": {"374217": null}},
+        "B!74": {"name": "까테나 자파타 아르헨티노 말벡 2023", "posts": {"374141": null}},
+        "B!78": {"name": "오린스위프트 8이얼스인더데저트", "posts": {"374141": null}},
+        "B!79": {"name": "반피 부르넬로 디 몬탈치노", "posts": {"374141": null, "374217": null}},
+        "B!80": {"name": "킬리카눈 오라클 쉬라즈", "posts": {"374141": null, "374217": null}},
+        "B!81": {"name": "도미니오 드 핑구스, 피에스아이", "posts": {"374141": null}},
+        "B!82": {"name": "토마시 아마로네 델라 발폴리첼라 클라시코", "posts": {"374141": null, "374217": null}},
+        "B!86": {"name": "투핸즈 찰리스 가든", "posts": {"374217": null}},
+        "B!87": {"name": "지디 바이라 알베 바롤로 2022", "posts": {"374141": null}},
+        "B!88": {"name": "몰리두커 블루아이드보이", "posts": {"374141": null, "374217": null}},
+        "B!89": {"name": "오르페우스 앤 더 레이븐 슈냉블랑", "posts": {"374354": null}},
+        "B!90": {"name": "산펠리체 비고렐로", "posts": {"374141": null, "374217": null}},
+        "B!92": {"name": "산펠리체 일 그리지오 끼안티 클라시코 그란셀레지오네 2021", "posts": {"374217": null}},
+        "B!94": {"name": "지아코모 보르고뇨 노 네임 네비올로 랑게", "posts": {"374141": null}},
+        "B!95": {"name": "레쿠폴레 21/22", "posts": {"374141": null}},
+        "B!96": {"name": "트라피체 비져너리 싱글빈야드 말벡", "posts": {"374141": null}},
+        "B!97": {"name": "톨라이니 발디산티 IGT 2021", "posts": {"374141": null}},
+        "B!98": {"name": "미떼루노 마야카바", "posts": {"374141": null}},
+        "B!99": {"name": "트라피체 핀카 엘 밀라그로 리미티드 에디션", "posts": {"374141": null}},
+        "B!106": {"name": "덕혼 디코이 7종", "posts": {"374141": null}},
+        "B!108": {"name": "프레스코발디 니포짜노 끼안티 리제르바", "posts": {"374141": null}},
+        "B!112": {"name": "몰리두커 투 레프트 피트", "posts": {"374141": null}},
+        "B!113": {"name": "몰리두커, 더 복서", "posts": {"374141": null}},
+        "B!115": {"name": "투핸즈 엔젤스 쉐어", "posts": {"374141": null}},
+        "B!116": {"name": "신퀀타 꼴레지오네", "posts": {"374141": null}},
+        "B!117": {"name": "킬리카눈 코브넌트 쉬라즈", "posts": {"374141": null}},
+        "B!122": {"name": "샤토 생 미셸 인디언 웰스 카베르네 소비뇽", "posts": {"374141": null}},
+        "B!123": {"name": "샤토 생 미셸 인디언 웰스 메를로", "posts": {"374141": null}},
+        "B!124": {"name": "샤토 생 미셸 인디언 웰스 샤르도네", "posts": {"374141": null}},
+        "B!125": {"name": "톨라이니 알 파쏘 IGT 2021/2022", "posts": {"374141": null}},
+        "B!127": {"name": "산펠리체 일 그리지오 끼안티 클라시코 리제르바 21/22", "posts": {"374141": null}},
+        "B!136": {"name": "시트랑 리미티드 에디션", "posts": {"374141": null}},
+        "B!137": {"name": "모엣샹동 임페리얼", "posts": {"374141": null}},
+        "B!145": {"name": "루이자도 샤블리", "posts": {"374141": null}},
+        "B!149": {"name": "에로이카 리슬링", "posts": {"374141": null}},
+        "B!152": {"name": "스칼리올라 피에몬테 샤도네이 2024", "posts": {"374141": null}},
+        "B!153": {"name": "크래기 레인지 테 무나 소비뇽 블랑", "posts": {"374354": null}},
+        "B!154": {"name": "라파우라 스프링스 불 파독 빈야드 소비뇽 블랑", "posts": {"374354": null}},
+        "B!161": {"name": "꼬도르뉴 그란 플러스 울트라 샤르도네", "posts": {"374354": null}},
+        "B!167": {"name": "쌩 클레어 오마카 리저브 샤도네이", "posts": {"374141": null}},
+        "B!171": {"name": "쌩 클레어 비카스 초이스 소비뇽 블랑 버블스", "posts": {"374394": "2025"}},
+        "B!177": {"name": "베어풋 버블리 핑크 모스카토", "posts": {"374141": null}},
+        "B!183": {"name": "보데가스 란 크리안자", "posts": {"374141": null}},
+        "B!185": {"name": "세인트할렛 블랙클레이 바로사 쉬라즈 2022", "posts": {"374141": null}},
+        "B!204": {"name": "콜럼비아 크레스트 H3 까베르네 소비뇽", "posts": {"374141": null}},
+        "B!214": {"name": "셀락 오리진 소비뇽블랑", "posts": {"374141": null}},
+        "B!217": {"name": "다크호스 버터리샤도네이", "posts": {"374141": null}},
+        "B!219": {"name": "코노 쇼비뇽 블랑", "posts": {"374141": null}},
+        "B!261": {"name": "몬테스 알파 까버네소비뇽 뱀띠 에디션", "posts": {"374141": null}},
+        "B!262": {"name": "몬테스알파 카버네소비뇽 홀스 에디션", "posts": {"374141": null}},
+        "B!267": {"name": "1865 스페셜 에디션 비러브드 2종 (까쇼,쇼블)", "posts": {"374141": null}},
+        "B!280": {"name": "샤또 그뤼오 라로즈 19/21", "posts": {"374217": null}},
+        "B!285": {"name": "뿌삐유", "posts": {"374141": null}},
+        "B!293": {"name": "바롱 드 레스탁 40주년 리미티드 에디션 '파이어드 오크 배럴'", "posts": {"374141": null}},
+        "B!295": {"name": "샤또 푸이게로 2013", "posts": {"374141": null}},
+        "B!304": {"name": "도멘 롱 드파키 샤블리", "posts": {"374141": null}},
+        "B!312": {"name": "조셉드루앵 라포레 부르고뉴 샤도네이 22", "posts": {"374141": null}},
+        "B!314": {"name": "로베르 드노정 마콩 빌라쥐 레 사르딘 23", "posts": {"374141": null}},
+        "B!316": {"name": "루이자도 부르고뉴 루즈 꾸벙 데 자코방", "posts": {"374141": null}},
+        "B!317": {"name": "루이자도 부르고뉴 블랑 꾸벙 데 자코방", "posts": {"374141": null}},
+        "B!333": {"name": "알베르비쇼 뿌이 퓌세", "posts": {"374141": null}},
+        "B!338": {"name": "장 마리 푸리에 비뉴 꽁뜨드샤펠 뫼르소 블랑", "posts": {"374217": null}},
+        "B!346": {"name": "쿠네 임페리얼 그란 리세르바 18", "posts": {"374141": null}},
+        "B!348": {"name": "지디 바이라 바롤로 라베라 2022", "posts": {"374354": null}},
+        "B!349": {"name": "지아코모 보르고뇨 바롤로 DOCG 2021", "posts": {"374141": null}},
+        "B!350": {"name": "폰토디 끼안티 클라시코 그랑 셀레지오네 비냐 델 소르보 2021", "posts": {"374141": null}},
+        "B!353": {"name": "프레스코발디 카스텔지오콘도 브루넬로 디 몬탈치노 2020", "posts": {"374141": null}},
+        "B!354": {"name": "루피노 모두스 수퍼투스칸", "posts": {"374141": null}},
+        "B!359": {"name": "이기갈 지공다스", "posts": {"374141": null}},
+        "B!363": {"name": "플라네타 샤도네이", "posts": {"374141": null}},
+        "B!365": {"name": "폰토디 끼안티 클라시코 DOCG", "posts": {"374141": null}},
+        "B!366": {"name": "톨라이니 끼안티 클라시코 그란 셀레지오네", "posts": {"374141": null}},
+        "B!367": {"name": "삐에르아마디유 그랑로마네 지공다스", "posts": {"374141": null}},
+        "B!368": {"name": "루피노 리제르바 두깔레 끼안티 클라시코 리세르바", "posts": {"374141": null}},
+        "B!371": {"name": "셀바흐 오스터 리슬링 파인허브", "posts": {"374354": null}},
+        "B!372": {"name": "두르뜨 그랑 떼루아 쏘떼른느2024", "posts": {"374141": null}},
+        "B!382": {"name": "트러플헌터 레다 바르바레스코", "posts": {"374141": null}},
+        "B!384": {"name": "보데가스 알히베스 셀렉투스", "posts": {"374141": null}},
+        "B!385": {"name": "토마시 그라티시오 아파시오나토", "posts": {"374141": null}},
+        "B!386": {"name": "토마시 아도라토 아파시오나토", "posts": {"374141": null}},
+        "B!391": {"name": "돈멜초 20/21/22", "posts": {"374141": null}},
+        "B!395": {"name": "케이머스 까버네소비뇽", "posts": {"374141": null}},
+        "B!397": {"name": "몬테스 알파 M", "posts": {"374217": null}},
+        "B!401": {"name": "투핸즈 야카 블록 2022", "posts": {"374141": null}},
+        "B!403": {"name": "까테나 자파타 니카시아 빈야드 말벡 2023", "posts": {"374141": null}},
+        "B!404": {"name": "도멘 드루앵 로렌 피노누아 2023", "posts": {"374354": null}},
+        "B!410": {"name": "투핸즈 벨라스 가든", "posts": {"374141": null}},
+        "B!415": {"name": "까테나 자파타 안젤리카 자파타 말벡 2022", "posts": {"374141": null, "374394": null}},
+        "B!433": {"name": "떼땅져 프레스티지 로제 브뤼", "posts": {"374141": null}},
+        "B!439": {"name": "앙드레 끌루에 드림 빈티지 2016", "posts": {"374141": null, "374394": null}},
+        "B!440": {"name": "앙드레 끌루에 드림 빈티지 2018", "posts": {"374141": null}},
+        "B!442": {"name": "앙드레 끌루에 실버 브뤼", "posts": {"374141": null}},
+        "B!456": {"name": "자이엉스 크레망 드 보르도 블랑 브뤼", "posts": {"374141": null}},
+        "B!458": {"name": "트라피체 스파클링 브뤼", "posts": {"374141": null}},
+        "B!461": {"name": "에밀리아나 꼬얌", "posts": {"374141": null}},
+        "B!462": {"name": "코노수르 20배럴 까베르네소비뇽", "posts": {"374141": null}},
+        "B!463": {"name": "코노수르 20배럴 피노누아", "posts": {"374141": null}},
+        "B!464": {"name": "코노수르 20배럴 샤도네이", "posts": {"374141": null}},
+        "B!466": {"name": "마르께스 데 리스칼 레세르바2021", "posts": {"374141": null}},
+        "B!471": {"name": "마르께스 데 까사 콘차 에티케타 네그라", "posts": {"374141": null}},
+        "B!472": {"name": "까사 콘차 어반 에디션 카베르네 소비뇽", "posts": {"374141": null}},
+        "B!473": {"name": "쌩 클레어 와이라우 리저브 소비뇽 블랑", "posts": {"374141": null}},
+        "B!476": {"name": "산펠리체 끼안티클라시코", "posts": {"374141": null}},
+        "B!480": {"name": "카를로 사니 수수마니엘로", "posts": {"374141": null}},
+        "B!506": {"name": "머드 하우스 소비뇽 블랑", "posts": {"374141": null}},
+        "B!512": {"name": "이스까이", "posts": {"374141": null}},
+        "B!513": {"name": "이스까이 시라 비오니에", "posts": {"374141": null, "374354": null}},
+        "B!514": {"name": "시데랄", "posts": {"374141": null}},
+        "B!515": {"name": "투핸즈 브레이브 페이스", "posts": {"374141": null}},
+        "B!516": {"name": "투핸즈 섹시 비스트", "posts": {"374141": null}},
+        "B!517": {"name": "투핸즈 날리 듀즈", "posts": {"374141": null}},
+        "B!518": {"name": "산타리타 트리플C", "posts": {"374141": null}},
+        "B!520": {"name": "카사 로호 마초맨", "posts": {"374141": null}},
+        "B!521": {"name": "카사 로호 틴타 피나", "posts": {"374141": null}},
+        "B!523": {"name": "운두라가 파운더스 컬렉션 까베르네 소비뇽 140주년", "posts": {"374394": null}},
+        "B!524": {"name": "베어 플레그 진판델", "posts": {"374141": null}},
+        "B!530": {"name": "무똥 까데 리저브 그라브 루즈", "posts": {"374141": null}},
+        "B!532": {"name": "무똥 까데 리저브 그라브 블랑", "posts": {"374141": null}},
+        "B!541": {"name": "피치니 피노키오", "posts": {"374141": null}},
+        "B!542": {"name": "테라 마쩨이", "posts": {"374141": null}},
+        "B!545": {"name": "발비 소프라니 갈라 로사", "posts": {"374141": null}},
+        "B!553": {"name": "앙시앙땅 4종 (까쇼, 피노, 샤도, 까쇼&쉬라)", "posts": {"374141": null}},
+        "B!554": {"name": "피치니 메모로", "posts": {"374141": null}},
+        "B!556": {"name": "페데리코 파테르니나 까바 브뤼", "posts": {"374141": null}},
+        "B!559": {"name": "산타헬레나 모스카토", "posts": {"374141": null}},
+        "B!560": {"name": "산타헬레나 세미 스위트 레드", "posts": {"374141": null}},
+        "B!561": {"name": "산타헬레나 세미 스위트 화이트", "posts": {"374141": null}},
+        "B!575": {"name": "달 포르노 로마노 아마로네 올드빈티지 3본입 세트 (2008x2본+2009x1본)", "posts": {"374217": null, "374354": null}},
+        "B!576": {"name": "비욘디 산티 부르넬로 디 몬탈치노 리제르바 2015", "posts": {"374141": null}},
+        "B!591": {"name": "사시까이아 2017", "posts": {"374141": null}},
+        "B!607": {"name": "미셸 마니앙 샤름 샹베르땡 그랑크뤼 2019", "posts": {"374394": null}},
+        "B!621": {"name": "오레무스 아쑤 5 푸토뇨스 1999", "posts": {"374217": null}},
+        "B!625": {"name": "반피 포지오 알로로 부르넬로 디 몬탈치노 13", "posts": {"374217": null}},
+        "B!638": {"name": "로버트 몬다비 까베르네 소비뇽 나파 밸리 + 샤또 몬텔레나 나파 샤도네이", "posts": {"374141": null}},
+        "B!642": {"name": "투핸즈 벨라스 가든 1.5L 2013", "posts": {"374217": null}},
+        "B!645": {"name": "까테나 자파타 아드리아나 화이트 본즈 샤도네이 2024", "posts": {"374354": null}},
+        "B!646": {"name": "까테나 자파타 아드리아나 화이트 스톤즈 샤도네이 2024", "posts": {"374354": null}},
+        "B!648": {"name": "이기갈 꽁드리유 라 도리안 2022", "posts": {"374354": null}},
+        "B!655": {"name": "지디 바이라 브리코 델레 비올레 바롤로 2021", "posts": {"374141": null, "374217": null}},
+        "B!674": {"name": "필립 샤를로팡 부르고뉴 루즈 꼬뜨도르 2023", "posts": {"374141": null}},
+        "B!675": {"name": "필립 샤를로팡 부르고뉴 블랑 꼬뜨도르 2023", "posts": {"374141": null}},
+        "B!676": {"name": "필립 샤를로팡 샤블리 2023", "posts": {"374141": null}},
+        "B!689": {"name": "뻬스께라-뻬스께라 레세르바", "posts": {"374141": null}},
+        "B!692": {"name": "라 스피네타 티모라쏘 데르토나 2024", "posts": {"374141": null, "374354": null}},
+        "B!700": {"name": "마르께스 데 리스칼 A 아리엔조 크리안사 1.5L 2017", "posts": {"374141": null}},
+        "A!30": {"name": "레 세레 누오베 오르넬라이아", "posts": {"374217": null}},
+        "A!35": {"name": "레볼떼 오르넬라이아", "posts": {"374217": null}},
+        "A!78": {"name": "샤또 리외섹 2020", "posts": {"374394": null}},
+        "A!422": {"name": "몽제아 뮈네레 부르고뉴 피노누아", "posts": {"374354": null}},
+        "A!452": {"name": "얀뒤리외 피브이", "posts": {"374217": null, "374354": null}},
+        "A!469": {"name": "베가시실리아 발부에나", "posts": {"374217": null}},
+        "A!473": {"name": "베가 시실리아 알리온 2020", "posts": {"374217": null}},
+        "A!547": {"name": "로버트 몬다비 리저브 까베네 투 칼론", "posts": {"374217": null}}
+      }
+    }
+  </script>
   <script type="application/json" id="wine-catalog">
   {
     "샤또 라피트 로칠드 21/23": ["red", "프랑스", "보르도"],
@@ -941,10 +1141,14 @@
       ["mixed", "혼합·세트"], ["unknown", "미확인"],
     ]);
     const catalog = new Map(Object.entries(JSON.parse(byId("wine-catalog").textContent)));
+    const cafeRecommendations = JSON.parse(byId("wine-recommendations").textContent);
+    const cafeSourceUrls = new Set(Object.values(cafeRecommendations.sources).map((source) => source.url));
     const original = JSON.parse(byId("wine-data").textContent);
     original.rows = original.rows.map((row) => {
       const [type, country, region] = row.type ? [row.type, row.country, row.region] : catalog.get(row.name) || [];
-      return { ...row, type: typeLabels.has(type) ? type : "unknown", country: country || "", region: region || "" };
+      const recommendation = cafeRecommendations.offers[row.id];
+      return { ...row, type: typeLabels.has(type) ? type : "unknown", country: country || "", region: region || "",
+        recommendations: recommendation && recommendation.name === row.name ? Object.entries(recommendation.posts) : [] };
     });
     const demo = {
       mode: "demo",
@@ -958,6 +1162,8 @@
     };
     let data = original;
     let view = "all";
+    let recommendationsOnly = new URLSearchParams(location.search).get("recommend") === "1";
+    const recommendButton = byId("recommendations-filter");
     let shown = [];
     const fmt = new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 0 });
     const percentage = new Intl.NumberFormat("ko-KR", { minimumFractionDigits: 1, maximumFractionDigits: 1, signDisplay: "exceptZero" });
@@ -1043,6 +1249,7 @@
         if (url.hostname === "www.wine-searcher.com" && url.pathname.startsWith("/find/")) return url.href;
         if (url.hostname === "www.google.com" && url.pathname === "/search" && url.searchParams.has("q")) return url.href;
         if (url.host === "awine.kr" && url.pathname.startsWith("/wine/") && !url.search && !url.hash) return url.href;
+        if (cafeSourceUrls.has(url.href)) return url.href;
         return null;
       } catch {
         return null;
@@ -1086,6 +1293,16 @@
         row.terms, row.section, lookup !== row.name && lookup,
         ...(locations?.length ? locations : [row.origin || `${row.sheet} ${row.row}행`]),
       ]);
+      if (row.recommendations?.length) {
+        emart.append(element("h3", "카페 추천"));
+        for (const [sourceId, sourceVintage] of row.recommendations) {
+          const source = cafeRecommendations.sources[sourceId];
+          const line = element("p");
+          appendLink(line, source.url, `${source.label}${source.login ? " (로그인 필요)" : ""} ↗`);
+          if (sourceVintage) line.append(`게시글 빈티지 ${sourceVintage}`);
+          emart.append(line);
+        }
+      }
 
       const awine = detailGroup("에이와인");
       if (!offer) {
@@ -1245,6 +1462,10 @@
 
     function render() {
       const rows = data.rows;
+      const hasRecommendations = rows.some((row) => row.recommendations?.length);
+      const showRecommendations = hasRecommendations && recommendationsOnly;
+      recommendButton.hidden = !hasRecommendations;
+      recommendButton.setAttribute("aria-pressed", String(showRecommendations));
       const query = key(byId("search").value.trim()).split(/\s+/).filter(Boolean);
       const sortValue = sorts[byId("sort").value] || sorts["awine-saving"];
       const type = byId("type-filter").value;
@@ -1259,6 +1480,7 @@
         Number.isFinite(data.search_info?.google_queries) && `Google 조회 ${fmt.format(data.search_info.google_queries)} / ${fmt.format(data.search_info.expected_queries || data.search_info.google_queries)}건`,
         awine && `에이와인 공식 상품 상세 ${fmt.format(awine.pages_read)}건 · ${formattedDate(awine.checked_at)}`].filter(Boolean).join(" · ");
       shown = rows.filter((row) => {
+        if (showRecommendations && !row.recommendations?.length) return false;
         if (view === "awine" && !isPrice(row.comparison.awine.price)) return false;
         if (view === "bargain" && !bargain(row)) return false;
         if (view === "priced" && !hasPrice(row)) return false;
@@ -1270,6 +1492,7 @@
         if (!query.length) return true;
         const searchable = key([row.name, row.lookup, row.search_name, row.vintage, ...(row.vintage_options || []),
           typeLabels.get(row.type), row.country, row.region, row.sheet, row.origin, row.section, row.terms, row.matched_name,
+          ...(row.recommendations || []).map(([, vintage]) => vintage),
           ...searchPrices(row).flatMap((quote) => [quote.name, quote.vintage]),
           ...awineOffers(row).flatMap((offer) => [offer.name, offer.vintage])].join(" "));
         return query.every((word) => searchable.includes(word));
@@ -1373,6 +1596,16 @@
       setView(button.dataset.view);
       render();
     }));
+    recommendButton.addEventListener("click", () => {
+      recommendationsOnly = !recommendationsOnly;
+      if (location.protocol === "https:" || location.protocol === "http:") {
+        const url = new URL(location.href);
+        if (recommendationsOnly) url.searchParams.set("recommend", "1");
+        else url.searchParams.delete("recommend");
+        history.replaceState(history.state, "", url);
+      }
+      render();
+    });
     byId("search").addEventListener("input", render);
     byId("sort").addEventListener("change", render);
     byId("grade-filter").addEventListener("change", render);
