@@ -27,6 +27,7 @@ from wine_searcher import vintage_of
 
 ORIGIN = "https://awine.kr"
 SITEMAP = f"{ORIGIN}/sitemap.xml"
+BUNDLE_DATA = Path(__file__).with_name("awine_bundles.json")
 YEAR = re.compile(r"(?<!\d)(?:18[789]\d|19\d{2}|20[0-3]\d)(?!\d)")
 NV = re.compile(r"\bn[. /-]*v\b\.?|논\s*빈티지|non[- ]vintage", re.I)
 VOLUME = re.compile(r"(?<!\d)(\d{1,3}(?:,\d{3})|\d+(?:\.\d+)?)\s*(ml|mℓ|㎖|cl|l|ℓ|밀리리터|리터)(?![a-z])", re.I)
@@ -250,7 +251,8 @@ class Catalog:
             score = confidence + 0.065 * exact_year - 0.16 * (not size_agrees)
             matches.append((score, self.urls[url], url, confidence))
         matches.sort(reverse=True)
-        selected = [url for _, _, url, _ in matches[:limit]]
+        selected = [url for hint in row.get("awine_urls", []) if (url := awine_url(hint, "/wine/"))]
+        selected.extend(url for _, _, url, _ in matches[:limit])
         for year in sorted(targets):
             exact = [url for _, _, url, confidence in matches if confidence >= 0.74 and year in self.years[url]]
             selected.extend(exact[:2])
@@ -495,6 +497,44 @@ def compare(row: dict, urls: list[str], products: dict[str, dict]) -> dict:
     return {"status": "not_matched"}
 
 
+def bundle_components(row: dict, bundle: dict) -> list[dict]:
+    parts = bundle["components"]
+    if parts and sum(part["quantity"] for part in parts) != bundle["bottles"]:
+        raise ValueError(f"세트 병 수 불일치: {row['name']}")
+    return [part | {"id": f"{row['id']}:bundle:{index}", "volume_ml": bundle["volume_ml"]}
+            for index, part in enumerate(parts)]
+
+
+def compare_bundle(row: dict, bundle: dict, parts: list[dict], plan: dict, products: dict[str, dict]) -> dict:
+    components = []
+    for part in parts:
+        result = compare(part, plan[part["id"]], products)
+        component = {key: part.get(key) for key in ("name", "vintage", "quantity")}
+        component["status"] = result["status"]
+        if result.get("offers"):
+            component["offer"] = result["offers"][0]
+        elif result.get("url"):
+            component["url"] = result["url"]
+        components.append(component)
+    details = {"bottles": bundle["bottles"], "volume_ml": bundle["volume_ml"], "components": components}
+    if not components:
+        return {"status": "bundle_unknown", "bundle": details}
+    if any("offer" not in component for component in components):
+        return {"status": "bundle_incomplete", "bundle": details}
+
+    price = sum(part["offer"]["price_krw"] * part["quantity"] for part in components)
+    offers = [part["offer"] for part in components]
+    reference = any(item["match"] not in {"exact", "nv"} or not item["volume_ml"] or item["stock"] == "sold_out"
+                    for item in offers)
+    total = {"name": row["name"], "price_krw": price, "match": "bundle",
+             "checked_at": max(item["checked_at"] for item in offers),
+             "notes": ["참고 합계" if reference else "구성품 합계"]}
+    for kind in ("event", "card"):
+        original = row.get(f"{kind}_krw")
+        total[f"{kind}_delta"] = round(price - original) if original is not None else None
+    return {"status": "priced", "offers": [total], "bundle": details | {"reference": reference}}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--page", type=Path, default=PAGE)
@@ -505,27 +545,35 @@ def main() -> None:
     parser.add_argument("--expand", type=int, default=8, help="동일 빈티지·규격을 찾지 못한 행의 후보 수")
     parser.add_argument("--plan", action="store_true", help="상품 상세 조회 없이 후보 수만 확인")
     parser.add_argument("--cached-only", action="store_true", help="이미 저장된 상품 상세로 대시보드 생성")
+    parser.add_argument("--bundles-only", action="store_true", help="구성품이 있는 세트 상품의 에이와인 가격만 갱신")
     args = parser.parse_args()
     if min(args.workers, args.candidates, args.expand) < 1:
         parser.error("작업자 수와 후보 수는 1 이상이어야 합니다.")
     args.cache.mkdir(parents=True, exist_ok=True)
     fetcher = Fetcher(interval=0.19)
     data = read_page(args.page)
-    for row in data["rows"]:
+    bundles = json.loads(BUNDLE_DATA.read_text(encoding="utf-8"))
+    bundle_rows = {row["id"]: row for row in data["rows"] if row.get("pack") and row["name"] in bundles}
+    component_rows = {row_id: bundle_components(row, bundles[row["name"]]) for row_id, row in bundle_rows.items()}
+    regular_rows = [] if args.bundles_only else [row for row in data["rows"] if row["id"] not in bundle_rows]
+    for row in regular_rows:
         if not row.get("pack") and (size := bottle_size(row["name"])):
             row.update(volume_ml=size, assumed_volume=False)
+    query_rows = regular_rows + [part for parts in component_rows.values() for part in parts]
+    if args.bundles_only and not bundle_rows:
+        parser.error("이 대시보드에 에이와인 세트 비교 대상이 없습니다.")
     source_urls = catalog_urls(args.cache, fetcher)
     catalog = Catalog(source_urls)
-    plan = {row["id"]: catalog.candidates(row, args.candidates) for row in data["rows"]}
+    plan = {row["id"]: catalog.candidates(row, args.candidates) for row in query_rows}
     requested = list(dict.fromkeys(url for candidates in plan.values() for url in candidates))
-    print(f"사이트맵 {len(source_urls):,}개 상품 · 행사 {len(plan):,}행 · 상세 후보 {len(requested):,}개", flush=True)
+    print(f"사이트맵 {len(source_urls):,}개 상품 · 조회 대상 {len(plan):,}개 · 상세 후보 {len(requested):,}개", flush=True)
     if args.plan:
         return
     cache = args.cache / "products.jsonl"
     products, errors = (read_cache(cache), Counter()) if args.cached_only else collect(requested, cache, fetcher, args.workers)
     if args.expand > args.candidates and errors["HTTP 429"] < 3 and errors["HTTP 403"] < 12:
         expanded = {}
-        for row in data["rows"]:
+        for row in query_rows:
             candidate_urls = plan[row["id"]]
             result = compare(row, candidate_urls, products)
             offers = result.get("offers", [])
@@ -538,18 +586,25 @@ def main() -> None:
         if not args.cached_only:
             products, next_errors = collect(requested, cache, fetcher, args.workers)
             errors.update(next_errors)
-    for row in data["rows"]:
+    for row in regular_rows:
         row["awine"] = compare(row, plan[row["id"]], products)
-    counts = Counter(row["awine"]["status"] for row in data["rows"])
+    for row_id, row in bundle_rows.items():
+        row["awine"] = compare_bundle(row, bundles[row["name"]], component_rows[row_id], plan, products)
+    counts = Counter(row["awine"]["status"] for row in data["rows"] if "awine" in row)
     observed = [products[url]["checked_at"] for url in requested if url in products and not products[url].get("missing")]
     missing = sum(bool(products.get(url, {}).get("missing")) for url in requested)
     if requested and not observed and not args.cached_only:
         raise RuntimeError("에이와인 상품 상세를 수집하지 못했습니다.")
-    data["awine_info"] = {"checked_at": max(observed, default=now()), "catalog_products": len(source_urls),
-                          "candidate_pages": len(requested), "pages_read": len(observed), "pages_removed": missing, "rows": len(plan),
-                          "status_counts": dict(counts), "fetch_errors": sum(errors.values())}
+    stats = {"checked_at": max(observed, default=now()), "catalog_products": len(source_urls),
+             "candidate_pages": len(requested), "pages_read": len(observed), "pages_removed": missing,
+             "rows": len(regular_rows) + len(bundle_rows), "status_counts": dict(counts), "fetch_errors": sum(errors.values())}
+    if args.bundles_only and data.get("awine_info"):
+        stats["status_counts"] = dict(Counter(row["awine"]["status"] for row in bundle_rows.values()))
+        data["awine_info"].update(bundles=stats, status_counts=dict(counts))
+    else:
+        data["awine_info"] = stats
     update_page(args.output or args.page, data, args.page)
-    print(json.dumps(data["awine_info"], ensure_ascii=False), flush=True)
+    print(json.dumps(stats, ensure_ascii=False), flush=True)
     if errors:
         print("AWINE 상세 조회 오류", dict(errors), flush=True)
 

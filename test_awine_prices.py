@@ -1,6 +1,6 @@
 import unittest
 
-from awine_prices import best_offer, compare, identity, read_product, row_name
+from awine_prices import best_offer, bundle_components, compare, compare_bundle, identity, read_product, row_name
 from build_dashboard import bottle_size
 
 
@@ -44,3 +44,34 @@ class AwineTests(unittest.TestCase):
         result = compare(row, [same_wine["url"]], {same_wine["url"]: same_wine})["offers"][0]
         self.assertEqual((result["event_delta"], result["card_delta"]), (-30_800, -2_060))
         self.assertIn("750mL 가정", result["notes"])
+
+    def test_bundle_multiplies_quantities_and_marks_nearby_vintage(self):
+        row = {"id": "A!1", "name": "샴페인 세트", "event_krw": 180_000, "card_krw": 150_000}
+        name = "모엣 샹동 임페리얼 브뤼"
+        bundle = {"bottles": 3, "volume_ml": 750, "components": [
+            {"name": name, "vintage": "2012", "quantity": 2},
+            {"name": name, "vintage": "2015", "quantity": 1},
+        ]}
+        parts = bundle_components(row, bundle)
+        same_wine = product(name, "Moet Chandon Imperial Brut", vintage="2013", size=750)
+        url = same_wine["url"]
+        result = compare_bundle(row, bundle, parts, {part["id"]: [url] for part in parts}, {url: same_wine})
+        self.assertTrue(result["bundle"]["reference"])
+        self.assertEqual(result["offers"][0]["price_krw"], 195_000)
+        self.assertEqual(result["offers"][0]["card_delta"], 45_000)
+
+    def test_bundle_keeps_verified_components_when_total_is_missing(self):
+        row = {"id": "A!1", "name": "샴페인 세트"}
+        same_wine = product("모엣 샹동 임페리얼 브뤼", "Moet Chandon Imperial Brut", vintage="2012", size=750)
+        bundle = {"bottles": 2, "volume_ml": 750, "components": [
+            {"name": same_wine["name"], "vintage": "2012", "quantity": 1},
+            {"name": same_wine["name"], "vintage": "2019", "quantity": 1},
+        ]}
+        parts = bundle_components(row, bundle)
+        url = same_wine["url"]
+        result = compare_bundle(row, bundle, parts, {part["id"]: [url] for part in parts}, {url: same_wine})
+        self.assertEqual(result["status"], "bundle_incomplete")
+        self.assertNotIn("offers", result)
+        first, second = result["bundle"]["components"]
+        self.assertEqual(first["offer"]["price_krw"], 65_000)
+        self.assertEqual(second["status"], "incompatible")

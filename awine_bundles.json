@@ -1,0 +1,162 @@
+{
+    "샤또 하야스 CDP 루즈 2015 + 마세토 2021": {
+        "bottles": 2,
+        "volume_ml": 750,
+        "components": [
+            {
+                "name": "샤또 하야스 CDP 루즈",
+                "lookup": "샤또 하야스 샤또 뇌프 뉘 빠쁘",
+                "search_name": "Chateau Rayas Chateauneuf du Pape",
+                "type": "red",
+                "vintage": "2015",
+                "quantity": 1,
+                "awine_urls": [
+                    "https://awine.kr/wine/샤또-하야스-샤또-뇌프-뉘-빠쁘-2011-chateau-rayas-chateauneuf-du-pape/"
+                ]
+            },
+            {
+                "name": "마세토",
+                "search_name": "Masseto Toscana",
+                "type": "red",
+                "vintage": "2021",
+                "quantity": 1
+            }
+        ]
+    },
+    "마세토 2019 + 살롱 2015 패키지": {
+        "bottles": 2,
+        "volume_ml": 750,
+        "components": [
+            {
+                "name": "마세토",
+                "search_name": "Masseto Toscana",
+                "type": "red",
+                "vintage": "2019",
+                "quantity": 1,
+                "awine_urls": [
+                    "https://awine.kr/wine/마세티노-2018-masseto-massetino/"
+                ]
+            },
+            {
+                "name": "살롱",
+                "lookup": "샹파뉴 살롱 S",
+                "search_name": "Champagne Salon S Blanc de Blancs Champagne Grand Cru",
+                "type": "sparkling",
+                "vintage": "2015",
+                "quantity": 1
+            }
+        ]
+    },
+    "샤또 드 퐁살레트 루즈 2015 + 샤또 오 브리옹 2009": {
+        "bottles": 2,
+        "volume_ml": 750,
+        "components": [
+            {
+                "name": "샤또 드 퐁살레트 루즈",
+                "search_name": "Chateau de Fonsalette Cotes du Rhone Rouge",
+                "type": "red",
+                "vintage": "2015",
+                "quantity": 1
+            },
+            {
+                "name": "샤또 오 브리옹",
+                "search_name": "Chateau Haut Brion Grand Cru Classe",
+                "type": "red",
+                "vintage": "2009",
+                "quantity": 1
+            }
+        ]
+    },
+    "달 포르노 로마노 아마로네 올드빈티지 3본입 세트 (2008x2본+2009x1본)": {
+        "bottles": 3,
+        "volume_ml": 750,
+        "components": [
+            {
+                "name": "달 포르노 로마노 아마로네",
+                "search_name": "Dal Forno Romano Amarone della Valpolicella",
+                "type": "red",
+                "vintage": "2008",
+                "quantity": 2
+            },
+            {
+                "name": "달 포르노 로마노 아마로네",
+                "search_name": "Dal Forno Romano Amarone della Valpolicella",
+                "type": "red",
+                "vintage": "2009",
+                "quantity": 1
+            }
+        ]
+    },
+    "마르셀 다이스 꼬프레 레 끌리마 세트": {
+        "bottles": 9,
+        "volume_ml": 750,
+        "components": []
+    },
+    "프리미엄 샤도네이 3종 패키지 (몬텔레나 샤도 + 플라네타 샤도 + 루이자도 샤블리)": {
+        "bottles": 3,
+        "volume_ml": 750,
+        "components": [
+            {
+                "name": "샤또 몬텔레나 나파 샤도네이",
+                "search_name": "Chateau Montelena Chardonnay",
+                "type": "white",
+                "quantity": 1
+            },
+            {
+                "name": "플라네타 샤도네이",
+                "search_name": "Planeta Chardonnay",
+                "type": "white",
+                "quantity": 1
+            },
+            {
+                "name": "루이자도 샤블리",
+                "search_name": "Louis Jadot Chablis",
+                "type": "white",
+                "quantity": 1
+            }
+        ]
+    },
+    "로버트 몬다비 까베르네 소비뇽 오크빌 2021 + 쉐이퍼 레드 숄더 랜치 샤도네이 2024": {
+        "bottles": 2,
+        "volume_ml": 750,
+        "components": [
+            {
+                "name": "로버트 몬다비 오크빌 까베르네 소비뇽",
+                "lookup": "로버트 몬다비 에스테이트 오크빌 까베르네 쇼비뇽",
+                "search_name": "Robert Mondavi Winery Oakville Cabernet Sauvignon",
+                "type": "red",
+                "vintage": "2021",
+                "quantity": 1,
+                "awine_urls": [
+                    "https://awine.kr/wine/로버트-몬다비-더-에스테이트-오크빌-까베르네-쇼비/"
+                ]
+            },
+            {
+                "name": "쉐이퍼 레드 숄더 랜치 샤도네이",
+                "search_name": "Shafer Red Shoulder Ranch Chardonnay",
+                "type": "white",
+                "vintage": "2024",
+                "quantity": 1
+            }
+        ]
+    },
+    "로버트 몬다비 까베르네 소비뇽 나파 밸리 + 샤또 몬텔레나 나파 샤도네이": {
+        "bottles": 2,
+        "volume_ml": 750,
+        "components": [
+            {
+                "name": "로버트 몬다비 나파 밸리 까베르네 소비뇽",
+                "lookup": "로버트 몬다비 나파 까베르네 쇼비뇽",
+                "search_name": "Robert Mondavi Napa Valley Cabernet Sauvignon",
+                "type": "red",
+                "quantity": 1
+            },
+            {
+                "name": "샤또 몬텔레나 나파 샤도네이",
+                "search_name": "Chateau Montelena Chardonnay",
+                "type": "white",
+                "quantity": 1
+            }
+        ]
+    }
+}
