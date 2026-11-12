@@ -60,6 +60,8 @@ python market_catalog.py --refresh-page --captures .work/google-captures.jsonl -
 
 추천을 켠 화면은 [카페 추천 목록](https://leerazor.github.io/wine-dashboard/?recommend=1)에서 바로 열 수 있습니다.
 
+**필터 → 줄서기 와인**에서 11월 12일 목요일 또는 11월 13일 금요일을 선택하면 해당 날짜의 일별초특가를 볼 수 있습니다. 같은 날짜에 진행되는 카드사 할인 일별초특가도 포함합니다.
+
 ## 1. 원본 목록 확인
 
 Python 3.10 이상이 필요합니다. 원본은 `input/` 폴더에 두세요.

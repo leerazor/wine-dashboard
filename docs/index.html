@@ -67,6 +67,7 @@
     .segment[aria-pressed="true"] { border-color: var(--wine); background: var(--wine); color: white; }
     .catalog-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
     .catalog-controls label { display: block; margin-bottom: 4px; }
+    .queue-control { grid-column: 1 / -1; }
     .guide { font-size: .82rem; line-height: 1.55; color: var(--muted); }
     .guide p { margin: 0 0 6px; }
     .guide .utility { padding-inline: 0; color: var(--wine); }
@@ -118,7 +119,8 @@
       .panel { margin-top: 16px; }
       .toolbar { padding: 14px 18px 5px; }
       .controls { grid-template-columns: minmax(0, 1fr) 325px; }
-      .catalog-controls { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .catalog-controls { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+      .queue-control { grid-column: auto; }
       table { display: table; font-size: .89rem; }
       thead { position: static; clip-path: none; width: auto; height: auto; }
       tbody { display: table-row-group; }
@@ -175,6 +177,14 @@
           <button type="button" class="segment" data-view="pending" aria-pressed="false">와인서쳐 가격 미확인</button>
         </div>
         <div class="catalog-controls" role="group" aria-label="와인 분류 필터">
+          <div class="queue-control">
+            <label for="queue-filter">줄서기 와인</label>
+            <select id="queue-filter">
+              <option value="">전체 행사</option>
+              <option value="11/12(목)">목요일 (11/12)</option>
+              <option value="11/13(금)">금요일 (11/13)</option>
+            </select>
+          </div>
           <div>
             <label for="grade-filter">매장 등급</label>
             <select id="grade-filter">
@@ -1472,6 +1482,7 @@
       const country = byId("country-filter").value;
       const region = byId("region-filter").value;
       const grade = byId("grade-filter").value;
+      const queueDay = byId("queue-filter").value;
       const awine = data.awine_info;
       const searchFx = data.search_info?.fx;
       byId("provider-info").textContent = [data.provider, data.fx &&
@@ -1481,6 +1492,10 @@
         awine && `에이와인 공식 상품 상세 ${fmt.format(awine.pages_read)}건 · ${formattedDate(awine.checked_at)}`].filter(Boolean).join(" · ");
       shown = rows.filter((row) => {
         if (showRecommendations && !row.recommendations?.length) return false;
+        if (queueDay) {
+          const section = row.section?.replace(/\s+/g, "") ?? "";
+          if (!section.includes("일별초특가") || !section.includes(queueDay)) return false;
+        }
         if (view === "awine" && !isPrice(row.comparison.awine.price)) return false;
         if (view === "bargain" && !bargain(row)) return false;
         if (view === "priced" && !hasPrice(row)) return false;
@@ -1608,6 +1623,7 @@
     });
     byId("search").addEventListener("input", render);
     byId("sort").addEventListener("change", render);
+    byId("queue-filter").addEventListener("change", render);
     byId("grade-filter").addEventListener("change", render);
     byId("type-filter").addEventListener("change", render);
     byId("country-filter").addEventListener("change", () => {
@@ -1621,7 +1637,7 @@
       event.currentTarget.setAttribute("aria-pressed", String(data === demo));
       event.currentTarget.textContent = data === demo ? "원본 화면" : "예시 보기";
       byId("search").value = "";
-      for (const id of ["grade-filter", "type-filter", "country-filter", "region-filter"]) byId(id).value = "";
+      for (const id of ["queue-filter", "grade-filter", "type-filter", "country-filter", "region-filter"]) byId(id).value = "";
       updateCatalogOptions();
       setView("all");
       render();
