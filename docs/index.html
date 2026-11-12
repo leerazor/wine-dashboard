@@ -82,6 +82,11 @@
     .wine-col { grid-column: 1 / -1; }
     .wine-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
     .wine-heading > div { min-width: 0; }
+    .wine-actions { display: flex; flex: none; align-items: center; gap: 5px; }
+    .recommendation-badge {
+      padding: 3px 6px; border-radius: 5px; background: var(--sand); color: var(--wine);
+      font-size: .72rem; font-weight: 700; white-space: nowrap;
+    }
     .primary { font-size: .96rem; font-weight: 730; line-height: 1.36; word-break: keep-all; }
     .wine-meta { margin-top: 2px; color: var(--muted); font-size: .73rem; }
     .detail-toggle { flex: none; border-color: var(--line); }
@@ -1428,7 +1433,10 @@
         }
         toggle.setAttribute("aria-expanded", String(!details.hidden));
       });
-      heading.append(title, toggle);
+      const actions = element("div", "", "wine-actions");
+      if (row.recommendations?.length) actions.append(element("span", "추천", "recommendation-badge"));
+      actions.append(toggle);
+      heading.append(title, actions);
       name.append(heading);
 
       const event = priceCell(emart, hasCard ? "이마트 카드가" : "이마트 행사가");
